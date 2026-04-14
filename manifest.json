@@ -1,0 +1,17 @@
+{
+  "name": "4M Fire Inc. - Sprinkler System Inspection",
+  "short_name": "4M Fire",
+  "description": "Fire sprinkler system inspection app for 4M Fire Inc.",
+  "start_url": "./4m-fire-inspection.html",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='20' fill='%23000'/><text x='96' y='120' font-size='80' font-family='Arial' fill='%23fff' text-anchor='middle' font-weight='bold'>4M</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
