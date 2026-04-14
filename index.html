@@ -1163,7 +1163,8 @@
                     step.classList.add('active');
                 } else if (idx < currentScreen) {
                     step.classList.add('completed');
-                } else if (idx > highestScreenReached) {
+                } else {
+                    // Everything ahead of current screen is disabled — must use Next button
                     step.classList.add('disabled');
                 }
             });
@@ -1172,13 +1173,14 @@
         let highestScreenReached = 0;
 
         function goToScreen(screenIndex) {
-            // Only allow going back to screens already visited, never skip ahead
-            if (screenIndex <= highestScreenReached) {
+            // Only allow going BACK to previously completed screens, never forward
+            if (screenIndex < currentScreen) {
                 currentScreen = screenIndex;
                 renderScreen();
                 updateProgressBar();
                 document.getElementById('container').scrollTop = 0;
             }
+            // To go forward, user must use the Next button (enforces sequential validation)
         }
 
         function nextScreen() {
@@ -2418,15 +2420,39 @@
             renderAssetTestsScreen();
         }
 
+        // Build a standardized filename: ClientName_InspectionDate_Frequency
+        function buildInspectionFilename(data, extension) {
+            const freqMap = {
+                'annual': 'Annual',
+                'semiannual': 'Semi-Annual',
+                'monthly': 'Monthly'
+            };
+            const client = (data.screen2.companyName || 'UnknownClient').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const date = data.screen1.inspectionDate || new Date().toISOString().split('T')[0];
+            const freq = freqMap[data.screen1.inspectionType] || data.screen1.inspectionType || 'Inspection';
+            return client + '_' + date + '_' + freq + '.' + extension;
+        }
+
+        // Build filename from a saved DB record (which has flat fields, not nested screens)
+        function buildFilenameFromRecord(record, extension) {
+            const freqMap = {
+                'annual': 'Annual',
+                'semiannual': 'Semi-Annual',
+                'monthly': 'Monthly'
+            };
+            const client = (record.companyName || 'UnknownClient').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const date = record.inspectionDate || new Date().toISOString().split('T')[0];
+            const freq = freqMap[record.inspectionType] || record.inspectionType || 'Inspection';
+            return client + '_' + date + '_' + freq + '.' + extension;
+        }
+
         function saveReport() {
             const dataStr = JSON.stringify(inspectionData, null, 2);
             const blob = new Blob([dataStr], {type: 'application/json'});
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
-            const companySlug = (inspectionData.screen2.companyName || 'Inspection').replace(/\s+/g, '_');
-            const date = inspectionData.screen1.inspectionDate || new Date().toISOString().split('T')[0];
             a.href = url;
-            a.download = '4M_Inspection_' + companySlug + '_' + date + '.json';
+            a.download = buildInspectionFilename(inspectionData, 'json');
             a.click();
             URL.revokeObjectURL(url);
         }
@@ -2448,7 +2474,7 @@
                         if (!inspectionData.screen5) inspectionData.screen5 = { drySystems:[], wetSystems:[], firePumps:[], fireHydrants:[], flowsTamperSwitch:[] };
                         if (!inspectionData.screen6) inspectionData.screen6 = { deficiencies:'', recommendations:'' };
                         currentScreen = 0;
-                        highestScreenReached = 6;
+                        highestScreenReached = 0;
                         renderScreen();
                         updateProgressBar();
                         alert('Report loaded successfully!');
@@ -2877,8 +2903,8 @@
                     <select onchange="dashboardFilter = this.value; renderDashboard()">
                         <option value="">All Types</option>
                         <option value="annual" ${dashboardFilter === 'annual' ? 'selected' : ''}>Annual</option>
-                        <option value="quarterly" ${dashboardFilter === 'quarterly' ? 'selected' : ''}>Quarterly</option>
-                        <option value="5year" ${dashboardFilter === '5year' ? 'selected' : ''}>5-Year</option>
+                        <option value="semiannual" ${dashboardFilter === 'semiannual' ? 'selected' : ''}>Semi-Annual</option>
+                        <option value="monthly" ${dashboardFilter === 'monthly' ? 'selected' : ''}>Monthly</option>
                     </select>
                     <select onchange="dashboardSort = this.value; renderDashboard()">
                         <option value="date-desc" ${dashboardSort === 'date-desc' ? 'selected' : ''}>Newest First</option>
@@ -2898,7 +2924,7 @@
                 html += `<div class="dashboard-empty">${inspections.length === 0 ? 'No inspections saved yet. Complete an inspection and generate a PDF to save it here.' : 'No inspections match your search.'}</div>`;
             } else {
                 filtered.forEach(r => {
-                    const typeLabel = {annual:'Annual', quarterly:'Quarterly', '5year':'5-Year'}[r.inspectionType] || r.inspectionType || 'N/A';
+                    const typeLabel = {annual:'Annual', semiannual:'Semi-Annual', monthly:'Monthly'}[r.inspectionType] || r.inspectionType || 'N/A';
                     html += `
                         <div class="dashboard-card">
                             <div class="dashboard-card-info">
@@ -2933,7 +2959,7 @@
                     if (!inspectionData.screen5) inspectionData.screen5 = { drySystems:[], wetSystems:[], firePumps:[], fireHydrants:[], flowsTamperSwitch:[] };
                     if (!inspectionData.screen6) inspectionData.screen6 = { deficiencies:'', recommendations:'' };
                     currentScreen = 0;
-                    highestScreenReached = 6;
+                    highestScreenReached = 0;
                     renderScreen();
                     updateProgressBar();
                     closeDashboard();
@@ -3020,9 +3046,7 @@
                     return;
                 }
 
-                const company = (record.companyName || 'Inspection').replace(/[^a-zA-Z0-9]/g, '_');
-                const date = record.inspectionDate || new Date().toISOString().split('T')[0];
-                const filename = '4M_Inspection_' + company + '_' + date + '.json';
+                const filename = buildFilenameFromRecord(record, 'json');
 
                 const exportData = {
                     appVersion: '4M Fire Inspection',
@@ -3129,9 +3153,7 @@
             const noPrintDivs = overlay.querySelectorAll('.no-print');
             noPrintDivs.forEach(el => el.style.display = 'none');
 
-            const companyName = (inspectionData.screen2.companyName || 'Inspection').replace(/[^a-zA-Z0-9]/g, '_');
-            const dateStr = inspectionData.screen1.inspectionDate || new Date().toISOString().split('T')[0];
-            const filename = '4M_Fire_Inspection_' + companyName + '_' + dateStr + '.pdf';
+            const filename = buildInspectionFilename(inspectionData, 'pdf');
 
             const opt = {
                 margin: [0.4, 0.4, 0.4, 0.4],
