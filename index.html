@@ -2593,7 +2593,8 @@
 
             // Build the full report HTML
             let rpt = '';
-            const hdr = '<div style="background:#000;color:#fff;padding:10px 20px;display:flex;justify-content:space-between;align-items:center;"><img src="data:image/png;base64,' + logob64 + '" style="height:40px;filter:invert(1);"></div>';
+            // Blank header (was a black bar with an inverted logo that rendered as ugly black boxes atop every page)
+            const hdr = '';
             const secTitle = (t) => '<div style="background:#000;color:#fff;padding:8px 16px;font-size:14px;font-weight:700;margin:20px 0 10px 0;page-break-inside:avoid;">' + t + '</div>';
 
             // Cover page
@@ -2611,8 +2612,10 @@
             rpt += '<div style="position:absolute;bottom:60px;left:0;right:0;text-align:center;font-size:11px;color:#666;">4M Fire Inc. | sales@4mfire.com | 1-844-463-4730</div>';
             rpt += '</div>';
 
-            // Executive Summary & Building Info
-            rpt += '<div style="page-break-after:always;">' + hdr;
+            // Executive Summary & Building Info (no forced page break after —
+            // lets content flow naturally; the next section's page-break-before
+            // handles the break and avoids a blank page in between).
+            rpt += '<div>' + hdr;
             rpt += secTitle('Executive Summary');
             rpt += '<table style="width:100%;border-collapse:collapse;">';
             rpt += fieldRow('Inspection Date', d.screen1.inspectionDate);
@@ -2642,7 +2645,16 @@
             rpt += fieldRow('Fire Pumps', d.screen3.firePumps);
             rpt += fieldRow('Fire Hydrants', d.screen3.fireHydrants);
             rpt += fieldRow('Standpipe', d.screen3.standpipe ? 'Yes' : 'No');
-            rpt += '</table></div>';
+            rpt += '</table>';
+
+            // Deficiencies & Recommendations — placed right after the Executive
+            // Summary / Building Info / Assets Inspected block so they appear
+            // prominently at the top of the report.
+            rpt += secTitle('Deficiencies');
+            rpt += '<div style="padding:10px;min-height:60px;font-size:11px;white-space:pre-wrap;border:1px solid #eee;">' + (s(d.screen6.deficiencies) || 'None noted.') + '</div>';
+            rpt += secTitle('Recommendations');
+            rpt += '<div style="padding:10px;min-height:60px;font-size:11px;white-space:pre-wrap;border:1px solid #eee;">' + (s(d.screen6.recommendations) || 'None noted.') + '</div>';
+            rpt += '</div>';
 
             // General Checklists
             checklistSections.forEach(section => {
@@ -2782,13 +2794,8 @@
                 rpt += '</table></div>';
             }
 
-            // Deficiencies & Recommendations
-            rpt += '<div style="page-break-before:always;">' + hdr;
-            rpt += secTitle('Deficiencies');
-            rpt += '<div style="padding:10px;min-height:80px;font-size:11px;white-space:pre-wrap;">' + (s(d.screen6.deficiencies) || 'None noted.') + '</div>';
-            rpt += secTitle('Recommendations');
-            rpt += '<div style="padding:10px;min-height:80px;font-size:11px;white-space:pre-wrap;">' + (s(d.screen6.recommendations) || 'None noted.') + '</div>';
-            rpt += '</div>';
+            // Deficiencies & Recommendations are placed up-front after the
+            // Executive Summary — see earlier in this function.
 
             // Show report in full-screen overlay (iPad-friendly, no popup needed)
             let reportOverlay = document.getElementById('reportOverlay');
