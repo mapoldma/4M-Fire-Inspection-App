@@ -2487,79 +2487,82 @@
             input.click();
         }
 
+        // Checklist definitions matching the app's data keys (module scope so both
+        // generatePDF() and downloadPDFFile() can use them).
+        const checklistSections = [
+            { name: 'Owner Section', key: 'ownerSection', items: [
+                {key:'item1',label:'Is the building occupied?'},{key:'item2',label:'Has occupancy/hazard/storage remained the same?'},
+                {key:'item3',label:'Are all fire protection systems in service?'},{key:'item4',label:'Solder-type sprinklers (extra-high temp) tested (5 yrs)?'},
+                {key:'item5',label:'Correct number/type of spare sprinklers?'},{key:'item6',label:'List of spare sprinklers present?'},
+                {key:'item7',label:'Sprinkler wrench for each type present?'},{key:'item8',label:'Escutcheons/coverplates properly installed?'},
+                {key:'item9',label:'All areas accessible for visual inspection?'},{key:'item10',label:'System remained in service without modification?'},
+                {key:'item11',label:'System free of actuations since last inspection?'},{key:'item12',label:'Owner maintains NFPA 25 4.3.3 records?'},
+                {key:'item13',label:'As-built drawings available?'}
+            ]},
+            { name: 'Fire Department Connection', key: 'fireDepartmentConnection', items: [
+                {key:'item1',label:'FDC caps/plugs in place & undamaged?'},{key:'item2',label:'FDC check valve free of leaks?'},
+                {key:'item3',label:'Interior inspected for obstructions?'},{key:'item4',label:'Piping supplying FDC undamaged?'},
+                {key:'item5',label:'Locking caps: internal inspection completed?'},{key:'item6',label:'FDC visible & accessible?'},
+                {key:'item7',label:'Gaskets in good condition?'},{key:'item8',label:'Clapper operating properly?'},
+                {key:'item9',label:'Identification signs in place?'},{key:'item10',label:'Automatic drain valve operating properly?'},
+                {key:'item11',label:'FDC to fire dept check valve hydrostatically tested (5 yrs)?'}
+            ]},
+            { name: 'Sprinkler Heads', key: 'sprinklerHeads', items: [
+                {key:'item1',label:'Proper orientation (upright/pendent/sidewall)?'},{key:'item2',label:'Free of corrosion & physical damage?'},
+                {key:'item3',label:'Proper clearance below sprinklers?'},{key:'item4',label:'Free of foreign materials/paint?'},
+                {key:'item5',label:'Glass bulb liquid visible?'},{key:'item6',label:'Dated 1920 or later?'},
+                {key:'item7',label:'Fast-response sprinklers (20 yrs) tested?'},{key:'item8',label:'Standard response (50 yrs) tested?'},
+                {key:'item9',label:'Dry-type (10 yrs) tested?'},{key:'item10',label:'Harsh environment sprinklers tested (5 yrs)?'},
+                {key:'item11',label:'If sample test failed, were all replaced?'}
+            ]},
+            { name: 'Pipes', key: 'pipes', items: [
+                {key:'item1',label:'Pipes/fittings in good condition, no corrosion?'},{key:'item2',label:'No mechanical damage or leaks?'},
+                {key:'item3',label:'No external loads?'},{key:'item4',label:'Hangers/seismic braces OK?'},
+                {key:'item5',label:'5-year flushing completed?'},{key:'item6',label:'Internal pipe inspection (5 yrs) completed?'},
+                {key:'item7',label:'Dry pipe in refrigerated spaces free of ice?'},{key:'item8',label:'Additional piping checked for ice?'},
+                {key:'item9',label:'Air leakage test passed (3 yrs)?'}
+            ]},
+            { name: 'Control Valve Area', key: 'controlValveArea', items: [
+                {key:'item1',label:'Valves in correct open/closed position?'},{key:'item2',label:'Valves locked or supervised?'},
+                {key:'item3',label:'Accessible?'},{key:'item4',label:'Free from leaks?'},{key:'item5',label:'Properly identified?'}
+            ]},
+            { name: 'Valve Area', key: 'valveArea', items: [
+                {key:'item1',label:'Control valves operated full range?'},{key:'item2',label:'Gauges good condition & normal pressure?'},
+                {key:'item3',label:'Check valves inspected & operating?'},{key:'item4',label:'PRVs open & not leaking?'},
+                {key:'item5',label:'PRV downstream pressure correct?'},{key:'item6',label:'PRV condition good?'},
+                {key:'item7',label:'Supervisory switches operate?'},{key:'item8',label:'Waterflow alarms passed test?'},
+                {key:'item9',label:'Post indicating valves exercised?'},{key:'item10',label:'PRVs partial flow test (5 yrs)?'},
+                {key:'item11',label:'Alarm valves & strainers internal inspected (5 yrs)?'},{key:'item12',label:'Strainers/orifices/diaphragms inspected?'},
+                {key:'item13',label:'Gauges calibrated/replaced (5 yrs)?'},{key:'item14',label:'PRVs full flow test done?'},
+                {key:'item15',label:'Valve enclosures heated >4\u00b0C?'}
+            ]},
+            { name: 'Backflow Preventers', key: 'backflowPreventers', items: [
+                {key:'item1',label:'RPZ relief port not discharging?'},{key:'item2',label:'Forward flow test passed?'},
+                {key:'item3',label:'Internal inspection (5 yrs) passed?'}
+            ]},
+            { name: 'Alarms', key: 'alarms', items: [
+                {key:'item1',label:'Alarm valve free of physical damage?'},{key:'item2',label:'Trim in correct position?'},
+                {key:'item3',label:'No leakage in retarding chamber/drains?'},{key:'item4',label:'Low temp alarms passed test?'},
+                {key:'item5',label:'Alarms/supervisory devices undamaged?'},{key:'item6',label:'Low temp alarms physically undamaged?'}
+            ]},
+            { name: 'Maintenance \u2013 Combined', key: 'maintenance', items: [
+                {key:'item1',label:'Dry valves/strainers/filters/orifices internal insp (5 yrs)?'},{key:'item2',label:'Auxiliary drains drained/operated?'},
+                {key:'item3',label:'Repaired/adjusted components tested/inspected?'},{key:'item4',label:'Drain test conducted after reopening closed valve?'},
+                {key:'item5',label:'OS&Y stems lubricated & fully cycled?'},{key:'item6',label:'Cooking system sprinklers/nozzles replaced annually?'}
+            ]},
+            { name: 'Inspection', key: 'inspection', items: [
+                {key:'item1',label:'Hydraulic name plate attached & legible?'},{key:'item2',label:'Information sign attached & legible?'},
+                {key:'item3',label:'Check valves internally inspected (5 yrs)?'},{key:'item4',label:'Excess pressure pump operable & undamaged?'}
+            ]}
+        ];
+
         function generatePDF() {
             const s = (v) => (v == null || v === undefined) ? '' : String(v);
             const d = inspectionData;
             const logob64 = 'iVBORw0KGgoAAAANSUhEUgAABC8AAAEpCAYAAACz0AiHAAC2vElEQVR42uy9Z5PjWJKlfahAEABBrUOk6BI9M7a7X/b//4MZ23d3ursqVQgGtQIJAgTl+6HHfS6ZjEhFRjAy/DGjZXVXVgQJxevnup8T2mw2GwiCIAiCIAiCIAiCIJwoYTkEgiAIgiAIgiAIgiCcMiJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgnDSiHghCIIgCIIgCIIgCMJJI+KFIAiCIAiCIAiCIAgnjYgXgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIIgCCeNiBeCIAiCIAiCIAiCIJw0Il4IgiAIgiAIgiAIgiCcNCJeCIIgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiAIgiAIgiAIJ42IF4IgCIIgCIIgCIJw0oh4IQiCIAiCIAiCIAjCSSPihSAIgiCIgiBQrVaRzWbhcDjwySefYHl5Gd99951SH3766ads/+TkJIbDIaLRKObn51EqlViXz+eRy+WUSqVSqVQqlUqlUqlUKpVKpVKpVCqVSqVSqVSqVf0P0CW9c1eEb1UAAAAASUVORK5CYII';
 
 
-            // Checklist definitions matching the app's data keys
-            const checklistSections = [
-                { name: 'Owner Section', key: 'ownerSection', items: [
-                    {key:'item1',label:'Is the building occupied?'},{key:'item2',label:'Has occupancy/hazard/storage remained the same?'},
-                    {key:'item3',label:'Are all fire protection systems in service?'},{key:'item4',label:'Solder-type sprinklers (extra-high temp) tested (5 yrs)?'},
-                    {key:'item5',label:'Correct number/type of spare sprinklers?'},{key:'item6',label:'List of spare sprinklers present?'},
-                    {key:'item7',label:'Sprinkler wrench for each type present?'},{key:'item8',label:'Escutcheons/coverplates properly installed?'},
-                    {key:'item9',label:'All areas accessible for visual inspection?'},{key:'item10',label:'System remained in service without modification?'},
-                    {key:'item11',label:'System free of actuations since last inspection?'},{key:'item12',label:'Owner maintains NFPA 25 4.3.3 records?'},
-                    {key:'item13',label:'As-built drawings available?'}
-                ]},
-                { name: 'Fire Department Connection', key: 'fireDepartmentConnection', items: [
-                    {key:'item1',label:'FDC caps/plugs in place & undamaged?'},{key:'item2',label:'FDC check valve free of leaks?'},
-                    {key:'item3',label:'Interior inspected for obstructions?'},{key:'item4',label:'Piping supplying FDC undamaged?'},
-                    {key:'item5',label:'Locking caps: internal inspection completed?'},{key:'item6',label:'FDC visible & accessible?'},
-                    {key:'item7',label:'Gaskets in good condition?'},{key:'item8',label:'Clapper operating properly?'},
-                    {key:'item9',label:'Identification signs in place?'},{key:'item10',label:'Automatic drain valve operating properly?'},
-                    {key:'item11',label:'FDC to fire dept check valve hydrostatically tested (5 yrs)?'}
-                ]},
-                { name: 'Sprinkler Heads', key: 'sprinklerHeads', items: [
-                    {key:'item1',label:'Proper orientation (upright/pendent/sidewall)?'},{key:'item2',label:'Free of corrosion & physical damage?'},
-                    {key:'item3',label:'Proper clearance below sprinklers?'},{key:'item4',label:'Free of foreign materials/paint?'},
-                    {key:'item5',label:'Glass bulb liquid visible?'},{key:'item6',label:'Dated 1920 or later?'},
-                    {key:'item7',label:'Fast-response sprinklers (20 yrs) tested?'},{key:'item8',label:'Standard response (50 yrs) tested?'},
-                    {key:'item9',label:'Dry-type (10 yrs) tested?'},{key:'item10',label:'Harsh environment sprinklers tested (5 yrs)?'},
-                    {key:'item11',label:'If sample test failed, were all replaced?'}
-                ]},
-                { name: 'Pipes', key: 'pipes', items: [
-                    {key:'item1',label:'Pipes/fittings in good condition, no corrosion?'},{key:'item2',label:'No mechanical damage or leaks?'},
-                    {key:'item3',label:'No external loads?'},{key:'item4',label:'Hangers/seismic braces OK?'},
-                    {key:'item5',label:'5-year flushing completed?'},{key:'item6',label:'Internal pipe inspection (5 yrs) completed?'},
-                    {key:'item7',label:'Dry pipe in refrigerated spaces free of ice?'},{key:'item8',label:'Additional piping checked for ice?'},
-                    {key:'item9',label:'Air leakage test passed (3 yrs)?'}
-                ]},
-                { name: 'Control Valve Area', key: 'controlValveArea', items: [
-                    {key:'item1',label:'Valves in correct open/closed position?'},{key:'item2',label:'Valves locked or supervised?'},
-                    {key:'item3',label:'Accessible?'},{key:'item4',label:'Free from leaks?'},{key:'item5',label:'Properly identified?'}
-                ]},
-                { name: 'Valve Area', key: 'valveArea', items: [
-                    {key:'item1',label:'Control valves operated full range?'},{key:'item2',label:'Gauges good condition & normal pressure?'},
-                    {key:'item3',label:'Check valves inspected & operating?'},{key:'item4',label:'PRVs open & not leaking?'},
-                    {key:'item5',label:'PRV downstream pressure correct?'},{key:'item6',label:'PRV condition good?'},
-                    {key:'item7',label:'Supervisory switches operate?'},{key:'item8',label:'Waterflow alarms passed test?'},
-                    {key:'item9',label:'Post indicating valves exercised?'},{key:'item10',label:'PRVs partial flow test (5 yrs)?'},
-                    {key:'item11',label:'Alarm valves & strainers internal inspected (5 yrs)?'},{key:'item12',label:'Strainers/orifices/diaphragms inspected?'},
-                    {key:'item13',label:'Gauges calibrated/replaced (5 yrs)?'},{key:'item14',label:'PRVs full flow test done?'},
-                    {key:'item15',label:'Valve enclosures heated >4\u00b0C?'}
-                ]},
-                { name: 'Backflow Preventers', key: 'backflowPreventers', items: [
-                    {key:'item1',label:'RPZ relief port not discharging?'},{key:'item2',label:'Forward flow test passed?'},
-                    {key:'item3',label:'Internal inspection (5 yrs) passed?'}
-                ]},
-                { name: 'Alarms', key: 'alarms', items: [
-                    {key:'item1',label:'Alarm valve free of physical damage?'},{key:'item2',label:'Trim in correct position?'},
-                    {key:'item3',label:'No leakage in retarding chamber/drains?'},{key:'item4',label:'Low temp alarms passed test?'},
-                    {key:'item5',label:'Alarms/supervisory devices undamaged?'},{key:'item6',label:'Low temp alarms physically undamaged?'}
-                ]},
-                { name: 'Maintenance \u2013 Combined', key: 'maintenance', items: [
-                    {key:'item1',label:'Dry valves/strainers/filters/orifices internal insp (5 yrs)?'},{key:'item2',label:'Auxiliary drains drained/operated?'},
-                    {key:'item3',label:'Repaired/adjusted components tested/inspected?'},{key:'item4',label:'Drain test conducted after reopening closed valve?'},
-                    {key:'item5',label:'OS&Y stems lubricated & fully cycled?'},{key:'item6',label:'Cooking system sprinklers/nozzles replaced annually?'}
-                ]},
-                { name: 'Inspection', key: 'inspection', items: [
-                    {key:'item1',label:'Hydraulic name plate attached & legible?'},{key:'item2',label:'Information sign attached & legible?'},
-                    {key:'item3',label:'Check valves internally inspected (5 yrs)?'},{key:'item4',label:'Excess pressure pump operable & undamaged?'}
-                ]}
-            ];
+            // checklistSections is defined at module scope above.
 
             function statusBadge(val) {
                 if (val === 'yes') return '<span style="background:#000;color:#fff;padding:2px 10px;border-radius:3px;font-weight:700;font-size:11px;">YES</span>';
@@ -3143,58 +3146,342 @@
         }
 
         // Download PDF file (works on iPad, Android, and all browsers)
+        // Build the PDF directly using jsPDF (reliable on iPad, desktop, all browsers)
         function downloadPDFFile() {
             const btn = document.getElementById('downloadPdfBtn');
-            const originalText = btn.textContent;
-            btn.textContent = '⏳ Generating PDF...';
-            btn.disabled = true;
+            const originalText = btn ? btn.textContent : '';
+            if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
 
-            // Target ONLY the report content div, not the scrollable overlay
-            const reportContent = document.getElementById('reportContent');
-            if (!reportContent) {
-                btn.textContent = originalText;
-                btn.disabled = false;
-                alert('Report content not found. Please regenerate the report.');
-                return;
-            }
+            try {
+                // jsPDF is bundled with html2pdf.js as window.jspdf.jsPDF
+                const jsPDFCtor = (window.jspdf && window.jspdf.jsPDF) || window.jsPDF;
+                if (!jsPDFCtor) {
+                    throw new Error('PDF library not loaded. Please refresh and try again.');
+                }
 
-            const filename = buildInspectionFilename(inspectionData, 'pdf');
+                const doc = new jsPDFCtor({ unit: 'pt', format: 'letter', orientation: 'portrait' });
+                const d = inspectionData;
+                const s = (v) => (v == null) ? '' : String(v);
 
-            // Clone the report into a detached container that's sized for letter paper
-            // This avoids html2canvas issues with scrollable/fixed-position parents
-            const wrapper = document.createElement('div');
-            wrapper.style.cssText = 'position:absolute;left:-99999px;top:0;width:8.5in;background:#fff;padding:0.4in;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#333;';
-            wrapper.innerHTML = reportContent.innerHTML;
-            document.body.appendChild(wrapper);
+                const pageW = doc.internal.pageSize.getWidth();   // 612 pt
+                const pageH = doc.internal.pageSize.getHeight();  // 792 pt
+                const marginX = 40;
+                const marginTop = 50;
+                const marginBottom = 50;
+                let y = marginTop;
 
-            const opt = {
-                margin: [0.4, 0.4, 0.4, 0.4],
-                filename: filename,
-                image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: {
-                    scale: 2,
-                    useCORS: true,
-                    logging: false,
-                    windowWidth: wrapper.scrollWidth,
-                    windowHeight: wrapper.scrollHeight,
-                    scrollX: 0,
-                    scrollY: 0
-                },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
-                pagebreak: { mode: ['css', 'legacy'], before: '[style*="page-break-before"]', after: '[style*="page-break-after"]' }
-            };
+                const freqMap = { annual:'Annual Inspection', semiannual:'Semi-Annual Inspection', monthly:'Monthly Inspection' };
+                const freqLabel = freqMap[d.screen1.inspectionType] || 'Inspection';
 
-            html2pdf().set(opt).from(wrapper).save().then(() => {
-                document.body.removeChild(wrapper);
-                btn.textContent = originalText;
-                btn.disabled = false;
-            }).catch(err => {
+                // --- Helpers ---
+                function ensureSpace(h) {
+                    if (y + h > pageH - marginBottom) {
+                        addFooter();
+                        doc.addPage();
+                        y = marginTop;
+                    }
+                }
+                function addFooter() {
+                    const n = doc.internal.getNumberOfPages();
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(120);
+                    doc.text('4M Fire Inc. — ' + (d.screen2.companyName || '') + ' — ' + (d.screen1.inspectionDate || ''), marginX, pageH - 25);
+                    doc.text('Page ' + n, pageW - marginX, pageH - 25, { align: 'right' });
+                    doc.setTextColor(0);
+                }
+                function sectionTitle(text) {
+                    ensureSpace(30);
+                    doc.setFillColor(0, 0, 0);
+                    doc.rect(marginX, y, pageW - 2 * marginX, 22, 'F');
+                    doc.setTextColor(255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(12);
+                    doc.text(text, marginX + 8, y + 15);
+                    doc.setTextColor(0);
+                    y += 30;
+                }
+                function subTitle(text) {
+                    ensureSpace(20);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(11);
+                    doc.text(text, marginX, y);
+                    y += 16;
+                }
+                function labelValueRow(label, value) {
+                    const lbl = s(label);
+                    const val = s(value) || '—';
+                    const labelW = 180;
+                    const valueW = pageW - 2 * marginX - labelW - 10;
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    const lblLines = doc.splitTextToSize(lbl, labelW);
+                    doc.setFont('helvetica', 'normal');
+                    const valLines = doc.splitTextToSize(val, valueW);
+                    const rowH = Math.max(lblLines.length, valLines.length) * 12 + 4;
+                    ensureSpace(rowH);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(lblLines, marginX, y + 10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text(valLines, marginX + labelW, y + 10);
+                    doc.setDrawColor(230);
+                    doc.line(marginX, y + rowH - 1, pageW - marginX, y + rowH - 1);
+                    y += rowH;
+                }
+                function para(text, size) {
+                    size = size || 10;
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(size);
+                    const lines = doc.splitTextToSize(s(text) || '—', pageW - 2 * marginX);
+                    for (let i = 0; i < lines.length; i++) {
+                        ensureSpace(size + 2);
+                        doc.text(lines[i], marginX, y + size);
+                        y += size + 2;
+                    }
+                    y += 6;
+                }
+                function statusText(val) {
+                    if (val === 'yes') return 'YES';
+                    if (val === 'no') return 'NO';
+                    if (val === 'na') return 'N/A';
+                    return '—';
+                }
+                function checklistTable(section) {
+                    const obj = d.screen4[section.key] || {};
+                    // Header row
+                    ensureSpace(20);
+                    doc.setFillColor(50, 50, 50);
+                    doc.rect(marginX, y, pageW - 2 * marginX, 18, 'F');
+                    doc.setTextColor(255);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(9);
+                    doc.text('Item', marginX + 6, y + 12);
+                    doc.text('Status', marginX + 310, y + 12);
+                    doc.text('Notes', marginX + 360, y + 12);
+                    doc.setTextColor(0);
+                    y += 20;
+
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(9);
+                    section.items.forEach((item, idx) => {
+                        const val = obj[item.key] || '';
+                        const notes = obj[item.key + '_notes'] || '';
+                        const itemLines = doc.splitTextToSize(item.label, 295);
+                        const notesLines = doc.splitTextToSize(notes || '—', pageW - marginX - 360 - 10);
+                        const rowH = Math.max(itemLines.length, notesLines.length) * 11 + 6;
+                        ensureSpace(rowH);
+                        if (idx % 2 === 0) {
+                            doc.setFillColor(248, 248, 248);
+                            doc.rect(marginX, y, pageW - 2 * marginX, rowH, 'F');
+                        }
+                        doc.setTextColor(0);
+                        doc.text(itemLines, marginX + 6, y + 10);
+                        // Status badge
+                        const st = statusText(val);
+                        if (st !== '—') {
+                            doc.setFillColor(st === 'N/A' ? 150 : 0, st === 'N/A' ? 150 : 0, st === 'N/A' ? 150 : 0);
+                            doc.rect(marginX + 305, y + 3, 40, 14, 'F');
+                            doc.setTextColor(255);
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(8);
+                            doc.text(st, marginX + 325, y + 13, { align: 'center' });
+                            doc.setFont('helvetica', 'normal');
+                            doc.setFontSize(9);
+                            doc.setTextColor(0);
+                        } else {
+                            doc.setTextColor(150);
+                            doc.text('—', marginX + 325, y + 11, { align: 'center' });
+                            doc.setTextColor(0);
+                        }
+                        doc.setTextColor(60);
+                        doc.text(notesLines, marginX + 360, y + 10);
+                        doc.setTextColor(0);
+                        y += rowH;
+                    });
+                    y += 8;
+                }
+
+                // === COVER PAGE ===
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(22);
+                doc.text('4M FIRE INC.', pageW / 2, 150, { align: 'center' });
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'normal');
+                doc.text('Sprinkler System Inspection Report', pageW / 2, 175, { align: 'center' });
+
+                doc.setDrawColor(0);
+                doc.setLineWidth(1);
+                doc.line(marginX + 80, 195, pageW - marginX - 80, 195);
+
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.text(freqLabel.toUpperCase(), pageW / 2, 230, { align: 'center' });
+
+                doc.setFontSize(18);
+                doc.text(s(d.screen2.companyName) || 'Client', pageW / 2, 280, { align: 'center' });
+                doc.setFontSize(12);
+                doc.setFont('helvetica', 'normal');
+                const addrLines = doc.splitTextToSize(s(d.screen2.buildingAddress) || '', pageW - 2 * marginX - 80);
+                doc.text(addrLines, pageW / 2, 305, { align: 'center' });
+
+                y = 400;
+                doc.setFontSize(11);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Inspection Date:', marginX + 100, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(s(d.screen1.inspectionDate) || '—', marginX + 250, y);
+                y += 20;
+                doc.setFont('helvetica', 'bold');
+                doc.text('Inspector:', marginX + 100, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(s(d.screen1.inspectorName) || '—', marginX + 250, y);
+                y += 20;
+                doc.setFont('helvetica', 'bold');
+                doc.text('Certification #:', marginX + 100, y);
+                doc.setFont('helvetica', 'normal');
+                doc.text(s(d.screen1.skillCert) || '—', marginX + 250, y);
+
+                addFooter();
+
+                // === EXECUTIVE SUMMARY ===
+                doc.addPage();
+                y = marginTop;
+                sectionTitle('EXECUTIVE SUMMARY');
+                para(d.screen1.executiveSummary || 'No executive summary provided.');
+
+                // === BUILDING INFORMATION ===
+                sectionTitle('BUILDING INFORMATION');
+                labelValueRow('Company Name', d.screen2.companyName);
+                labelValueRow('Building Address', d.screen2.buildingAddress);
+                labelValueRow('Contact Info', d.screen2.contactInfo);
+                labelValueRow('Lock Box Code', d.screen2.lockBoxCode);
+                labelValueRow('Fire Panel Monitoring Company', d.screen2.firePanelCompany);
+                labelValueRow('Fire Panel Account #', d.screen2.firePanelAccount);
+                labelValueRow('Fire Panel Password', d.screen2.firePanelPassword);
+                y += 10;
+
+                // === ASSET SUMMARY ===
+                sectionTitle('ASSET SUMMARY');
+                labelValueRow('Dry Systems', d.screen3.drySystems);
+                labelValueRow('Wet Systems', d.screen3.wetSystems);
+                labelValueRow('Fire Pumps', d.screen3.firePumps);
+                labelValueRow('Fire Hydrants', d.screen3.fireHydrants);
+                labelValueRow('Standpipe', d.screen3.standpipe ? 'Yes' : 'No');
+                y += 10;
+
+                // === CHECKLISTS ===
+                doc.addPage();
+                y = marginTop;
+                sectionTitle('INSPECTION CHECKLISTS');
+                checklistSections.forEach(section => {
+                    ensureSpace(40);
+                    subTitle(section.name);
+                    checklistTable(section);
+                });
+
+                // === ASSET TEST DETAILS ===
+                const hasAny = (d.screen5.drySystems && d.screen5.drySystems.length) ||
+                               (d.screen5.wetSystems && d.screen5.wetSystems.length) ||
+                               (d.screen5.firePumps && d.screen5.firePumps.length) ||
+                               (d.screen5.fireHydrants && d.screen5.fireHydrants.length) ||
+                               (d.screen5.flowsTamperSwitch && d.screen5.flowsTamperSwitch.length) ||
+                               d.screen5.standpipeFlow;
+
+                if (hasAny) {
+                    doc.addPage();
+                    y = marginTop;
+                    sectionTitle('ASSET TEST DETAILS');
+
+                    function renderTestRows(title, arr, fields) {
+                        if (!arr || !arr.length) return;
+                        arr.forEach((item, idx) => {
+                            ensureSpace(30);
+                            subTitle(title + ' ' + (idx + 1));
+                            fields.forEach(([lbl, key]) => {
+                                if (item[key] !== undefined && item[key] !== '' && item[key] !== null) {
+                                    labelValueRow(lbl, item[key]);
+                                }
+                            });
+                            y += 8;
+                        });
+                    }
+
+                    renderTestRows('Dry System', d.screen5.drySystems, [
+                        ['System #', 'systemNo'], ['Location', 'location'], ['Valve Size', 'valveSize'],
+                        ['Model #', 'modelNo'], ['Air Pressure', 'airPressure'], ['Static Pressure', 'staticPressure'],
+                        ['Residual Pressure', 'residualPressure'], ['Trip Time', 'tripTime'],
+                        ['Water Reach Time', 'waterReachTime'], ['Control Valve Type', 'controlValveType'],
+                        ['Left In Service', 'leftInService'], ['Notes', 'notes']
+                    ]);
+                    renderTestRows('Wet System', d.screen5.wetSystems, [
+                        ['Valve Size', 'valveSize'], ['Model #', 'modelNo'], ['Pressure', 'pressure'],
+                        ['Static Pressure', 'staticPressure'], ['Residual Pressure', 'residualPressure'],
+                        ['Control Valve Type', 'controlValveType'], ['Left In Service', 'leftInService'],
+                        ['Notes', 'notes']
+                    ]);
+                    renderTestRows('Fire Pump', d.screen5.firePumps, [
+                        ['Location', 'location'], ['Inlet/Outlet Size', 'inletOutletSize'],
+                        ['Make/Model', 'makeModel'], ['Startup Pressure', 'startupPressure'],
+                        ['Developed Pressure', 'developedPressure'], ['Notes', 'notes']
+                    ]);
+                    renderTestRows('Fire Hydrant', d.screen5.fireHydrants, [
+                        ['Location', 'location'], ['Valve Size', 'valveSize'], ['Model #', 'modelNo'],
+                        ['Static Pressure', 'staticPressure'], ['Colour', 'colour'], ['Notes', 'notes']
+                    ]);
+
+                    if (d.screen5.flowsTamperSwitch && d.screen5.flowsTamperSwitch.length) {
+                        ensureSpace(30);
+                        subTitle('Flows and Tamper Switch Inspections');
+                        d.screen5.flowsTamperSwitch.forEach((row, idx) => {
+                            labelValueRow('#' + (idx + 1) + ' Description', row.description);
+                            labelValueRow('FS Operations', row.fsOperations);
+                            labelValueRow('Time/PSI', row.timePsi);
+                            labelValueRow('Location', row.location);
+                        });
+                    }
+
+                    if (d.screen5.standpipeFlow) {
+                        const sp = d.screen5.standpipeFlow;
+                        ensureSpace(30);
+                        subTitle('Standpipe Flow Test');
+                        labelValueRow('Building Height', sp.buildingHeight);
+                        labelValueRow('Highest Hose Station', sp.highestHoseStation);
+                        labelValueRow('Flow Test Location', sp.flowTestLocation);
+                        labelValueRow('Test 1 Static / Residual / Flow', (sp.test1_static||'—') + ' / ' + (sp.test1_residual||'—') + ' / ' + (sp.test1_flow||'—'));
+                        labelValueRow('Test 2 Static / Residual / Flow', (sp.test2_static||'—') + ' / ' + (sp.test2_residual||'—') + ' / ' + (sp.test2_flow||'—'));
+                        labelValueRow('Test 3 Static / Residual / Flow', (sp.test3_static||'—') + ' / ' + (sp.test3_residual||'—') + ' / ' + (sp.test3_flow||'—'));
+                    }
+                }
+
+                // === DEFICIENCIES & RECOMMENDATIONS ===
+                doc.addPage();
+                y = marginTop;
+                sectionTitle('DEFICIENCIES');
+                para(d.screen6.deficiencies || 'None noted.');
+                y += 10;
+                sectionTitle('RECOMMENDATIONS');
+                para(d.screen6.recommendations || 'None noted.');
+
+                // Footer on all pages
+                const totalPages = doc.internal.getNumberOfPages();
+                for (let i = 1; i <= totalPages; i++) {
+                    doc.setPage(i);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setFontSize(8);
+                    doc.setTextColor(120);
+                    doc.text('4M Fire Inc. — ' + (d.screen2.companyName || '') + ' — ' + (d.screen1.inspectionDate || ''), marginX, pageH - 25);
+                    doc.text('Page ' + i + ' of ' + totalPages, pageW - marginX, pageH - 25, { align: 'right' });
+                }
+
+                const filename = buildInspectionFilename(inspectionData, 'pdf');
+                doc.save(filename);
+
+                if (btn) { btn.textContent = originalText; btn.disabled = false; }
+            } catch (err) {
                 console.error('PDF generation error:', err);
-                if (wrapper.parentNode) document.body.removeChild(wrapper);
-                btn.textContent = originalText;
-                btn.disabled = false;
-                alert('PDF generation failed: ' + err.message + '\n\nTry the Print button as an alternative — choose "Save as PDF" from the print dialog.');
-            });
+                if (btn) { btn.textContent = originalText; btn.disabled = false; }
+                alert('PDF generation failed: ' + err.message + '\n\nYou can use the Print button as an alternative — choose "Save as PDF" from the print dialog.');
+            }
         }
 
         // Export all inspections as a JSON file (for transferring between devices)
