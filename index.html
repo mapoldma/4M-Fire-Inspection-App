@@ -2596,8 +2596,9 @@
             // Blank header (was a black bar with an inverted logo that rendered as ugly black boxes atop every page)
             const hdr = '';
             const secTitle = (t) => '<div style="background:#000;color:#fff;padding:8px 16px;font-size:14px;font-weight:700;margin:20px 0 10px 0;page-break-inside:avoid;">' + t + '</div>';
-            // pageSecTitle = secTitle that also forces a new page (used at the start of each major section)
-            const pageSecTitle = (t) => '<div style="background:#000;color:#fff;padding:8px 16px;font-size:14px;font-weight:700;margin:0 0 10px 0;page-break-before:always;page-break-inside:avoid;">' + t + '</div>';
+            // pageSecTitle = first title in a section (appears at top of a new page because the prior wrapper has page-break-after:always).
+            // No top margin so the title sits flush at the top of the new page; page-break-inside:avoid keeps it from splitting.
+            const pageSecTitle = (t) => '<div style="background:#000;color:#fff;padding:8px 16px;font-size:14px;font-weight:700;margin:0 0 10px 0;page-break-inside:avoid;">' + t + '</div>';
 
             // Cover page
             rpt += '<div style="page-break-after:always;text-align:center;padding-top:80px;">';
