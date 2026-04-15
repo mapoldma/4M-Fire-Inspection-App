@@ -2658,7 +2658,7 @@
 
             // General Checklists
             checklistSections.forEach(section => {
-                rpt += '<div style="page-break-before:always;">' + hdr;
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr;
                 rpt += secTitle(section.name);
                 rpt += checklistTable(section);
                 if (section.key === 'backflowPreventers' && (d.screen4[section.key] || {}).details) {
@@ -2670,7 +2670,7 @@
             // Dry Systems
             for (let i = 0; i < d.screen3.drySystems; i++) {
                 const sys = d.screen5.drySystems[i] || {};
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Dry System Test \u2013 System ' + (i+1));
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Dry System Test \u2013 System ' + (i+1));
                 rpt += '<table style="width:100%;border-collapse:collapse;">';
                 [['System No.', sys.systemNo],['Location', sys.location],['Valve Size/Make', sys.valveSize],['Model No.', sys.modelNo],
                  ['System Air Pressure (PSI)', sys.airPressure],['City Static Water Pressure (PSI)', sys.staticPressure],
@@ -2693,7 +2693,7 @@
             // Wet Systems
             for (let i = 0; i < d.screen3.wetSystems; i++) {
                 const sys = d.screen5.wetSystems[i] || {};
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Wet System ' + (i+1));
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Wet System ' + (i+1));
                 rpt += '<table style="width:100%;border-collapse:collapse;">';
                 [['Valve Size/Make', sys.valveSize],['Model No.', sys.modelNo],['System Pressure', sys.pressure],
                  ['City Static Water Pressure', sys.staticPressure],['City Residual Water Pressure/Valve Size', sys.residualPressure],
@@ -2713,7 +2713,7 @@
             // Fire Pumps
             for (let i = 0; i < d.screen3.firePumps; i++) {
                 const p = d.screen5.firePumps[i] || {};
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Fire Pump Test \u2013 Pump ' + (i+1));
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Fire Pump Test \u2013 Pump ' + (i+1));
                 rpt += '<table style="width:100%;border-collapse:collapse;">';
                 [['Fire Pump Location', p.location],['Inlet & Outlet Size', p.inletOutletSize],['Make & Model No.', p.makeModel],
                  ['Type of Inlet Valve', p.inletValveType],['Start Up Pressure (PSI)', p.startupPressure],
@@ -2728,7 +2728,7 @@
             // Fire Hydrants
             for (let i = 0; i < d.screen3.fireHydrants; i++) {
                 const h = d.screen5.fireHydrants[i] || {};
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Fire Hydrant ' + (i+1));
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Fire Hydrant ' + (i+1));
                 rpt += '<table style="width:100%;border-collapse:collapse;">';
                 [['Valve Size/Make', h.valveSize],['Model No.', h.modelNo],['City Static Water Pressure', h.staticPressure],
                  ['Secondary Valve', h.secondaryValve],['Secondary Valve # Turns', h.secondaryTurns],
@@ -2743,7 +2743,7 @@
 
             // Flows and Tamper Switch
             if (d.screen5.flowsTamperSwitch && d.screen5.flowsTamperSwitch.length > 0) {
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Flows and Tamper Switch Inspections');
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Flows and Tamper Switch Inspections');
                 rpt += '<table style="width:100%;border-collapse:collapse;"><thead><tr style="background:#333;color:#fff;">';
                 rpt += '<th style="padding:6px;">Description</th><th style="padding:6px;">F.S. Operations</th><th style="padding:6px;">Time/PSI</th><th style="padding:6px;">Size</th><th style="padding:6px;">T.S Operation</th><th style="padding:6px;">Location</th></tr></thead><tbody>';
                 d.screen5.flowsTamperSwitch.forEach((row, idx) => {
@@ -2761,7 +2761,7 @@
             // Standpipe Flow Test
             if (d.screen3.standpipe && d.screen5.standpipeFlow) {
                 const sp = d.screen5.standpipeFlow;
-                rpt += '<div style="page-break-before:always;">' + hdr + secTitle('Standpipe Flow Test Report');
+                rpt += '<div class="html2pdf__page-break"></div><div>' + hdr + secTitle('Standpipe Flow Test Report');
                 rpt += '<h4 style="margin:10px 0 6px;font-size:12px;font-weight:700;">Building Characteristics</h4>';
                 rpt += '<table style="width:100%;border-collapse:collapse;">';
                 [['Building Height (Floors)', sp.buildingHeight],['Elevation (ft)', sp.elevation],['Highest Hose Station Location', sp.highestHoseStation],
@@ -3183,7 +3183,7 @@
                     image:        { type: 'jpeg', quality: 0.95 },
                     html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
                     jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
-                    pagebreak:    { mode: ['css', 'legacy'] }
+                    pagebreak:    { mode: ['css', 'legacy'], before: '.html2pdf__page-break' }
                 };
 
                 // Scroll the overlay to top so html2canvas captures from the start
