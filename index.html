@@ -3145,9 +3145,64 @@
             }
         }
 
-        // Download PDF file (works on iPad, Android, and all browsers)
-        // Build the PDF directly using jsPDF (reliable on iPad, desktop, all browsers)
+        // Download PDF file — uses html2pdf.js to convert the already-rendered
+        // #reportContent HTML into a nicely formatted PDF. This is far more
+        // reliable across iPad, desktop, and all browsers than manual jsPDF.
         function downloadPDFFile() {
+            const btn = document.getElementById('downloadPdfBtn');
+            const originalText = btn ? btn.textContent : '';
+            if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
+
+            const restore = () => { if (btn) { btn.textContent = originalText; btn.disabled = false; } };
+
+            try {
+                if (typeof html2pdf === 'undefined') {
+                    throw new Error('PDF library not loaded. Please refresh and try again.');
+                }
+
+                const reportEl = document.getElementById('reportContent');
+                if (!reportEl) {
+                    throw new Error('Report not rendered yet. Please reopen the report and try again.');
+                }
+
+                const filename = buildInspectionFilename(inspectionData, 'pdf');
+
+                // Clone the report content into a fixed-width offscreen container
+                // so page breaks and layout are consistent regardless of window size.
+                const container = document.createElement('div');
+                container.style.cssText = 'position:fixed;left:-10000px;top:0;width:8.5in;background:#fff;padding:0.5in;font-family:Arial,Helvetica,sans-serif;color:#333;';
+                container.innerHTML = reportEl.innerHTML;
+                document.body.appendChild(container);
+
+                const opt = {
+                    margin:       [0.4, 0.4, 0.5, 0.4],
+                    filename:     filename,
+                    image:        { type: 'jpeg', quality: 0.95 },
+                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff' },
+                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
+                    pagebreak:    { mode: ['css', 'legacy'], before: '.page-break-before', after: '.page-break-after' }
+                };
+
+                html2pdf().set(opt).from(container).save()
+                    .then(() => {
+                        document.body.removeChild(container);
+                        restore();
+                    })
+                    .catch(err => {
+                        console.error('html2pdf error:', err);
+                        try { document.body.removeChild(container); } catch(e) {}
+                        restore();
+                        alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nYou can use the Print button as an alternative — choose "Save as PDF" from the print dialog.');
+                    });
+            } catch (err) {
+                console.error('PDF generation error:', err);
+                restore();
+                alert('PDF generation failed: ' + err.message + '\n\nYou can use the Print button as an alternative — choose "Save as PDF" from the print dialog.');
+            }
+        }
+
+        // --- Legacy jsPDF implementation kept for reference but no longer used ---
+        function _unusedDownloadPDF_jsPDF() {
             const btn = document.getElementById('downloadPdfBtn');
             const originalText = btn ? btn.textContent : '';
             if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
