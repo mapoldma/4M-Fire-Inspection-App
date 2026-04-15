@@ -2801,7 +2801,8 @@
                 '<button onclick="downloadPDFFile()" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;" id="downloadPdfBtn">📥 Download PDF</button>' +
                 '<button onclick="window.print()" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;">🖨️ Print</button>' +
                 '<button onclick="document.getElementById(\'reportOverlay\').style.display=\'none\'" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;">← Back to App</button>' +
-                '</div>' + rpt;
+                '</div>' +
+                '<div id="reportContent" style="padding:20px;max-width:8.5in;margin:0 auto;background:#fff;">' + rpt + '</div>';
             reportOverlay.style.display = 'block';
             reportOverlay.scrollTop = 0;
 
@@ -3148,32 +3149,51 @@
             btn.textContent = '⏳ Generating PDF...';
             btn.disabled = true;
 
-            // Get the report content (everything except the toolbar)
-            const overlay = document.getElementById('reportOverlay');
-            const noPrintDivs = overlay.querySelectorAll('.no-print');
-            noPrintDivs.forEach(el => el.style.display = 'none');
+            // Target ONLY the report content div, not the scrollable overlay
+            const reportContent = document.getElementById('reportContent');
+            if (!reportContent) {
+                btn.textContent = originalText;
+                btn.disabled = false;
+                alert('Report content not found. Please regenerate the report.');
+                return;
+            }
 
             const filename = buildInspectionFilename(inspectionData, 'pdf');
+
+            // Clone the report into a detached container that's sized for letter paper
+            // This avoids html2canvas issues with scrollable/fixed-position parents
+            const wrapper = document.createElement('div');
+            wrapper.style.cssText = 'position:absolute;left:-99999px;top:0;width:8.5in;background:#fff;padding:0.4in;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;color:#333;';
+            wrapper.innerHTML = reportContent.innerHTML;
+            document.body.appendChild(wrapper);
 
             const opt = {
                 margin: [0.4, 0.4, 0.4, 0.4],
                 filename: filename,
                 image: { type: 'jpeg', quality: 0.95 },
-                html2canvas: { scale: 2, useCORS: true, logging: false },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    logging: false,
+                    windowWidth: wrapper.scrollWidth,
+                    windowHeight: wrapper.scrollHeight,
+                    scrollX: 0,
+                    scrollY: 0
+                },
                 jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'], before: '[style*="page-break-before"]', after: '[style*="page-break-after"]' }
             };
 
-            html2pdf().set(opt).from(overlay).save().then(() => {
-                noPrintDivs.forEach(el => el.style.display = '');
+            html2pdf().set(opt).from(wrapper).save().then(() => {
+                document.body.removeChild(wrapper);
                 btn.textContent = originalText;
                 btn.disabled = false;
             }).catch(err => {
                 console.error('PDF generation error:', err);
-                noPrintDivs.forEach(el => el.style.display = '');
+                if (wrapper.parentNode) document.body.removeChild(wrapper);
                 btn.textContent = originalText;
                 btn.disabled = false;
-                alert('PDF generation failed. You can try the Print button instead.');
+                alert('PDF generation failed: ' + err.message + '\n\nTry the Print button as an alternative — choose "Save as PDF" from the print dialog.');
             });
         }
 
