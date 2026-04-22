@@ -1,7 +1,7 @@
 const CACHE_NAME = '4m-fire-v2';
 const ASSETS = [
   './',
-  './4m-fire-inspection.html',
+  './index.html',
   './manifest.json'
 ];
 

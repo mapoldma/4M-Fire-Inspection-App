@@ -2,7 +2,7 @@
   "name": "4M Fire Inc. - Sprinkler System Inspection",
   "short_name": "4M Fire",
   "description": "Fire sprinkler system inspection app for 4M Fire Inc.",
-  "start_url": "./4m-fire-inspection.html",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

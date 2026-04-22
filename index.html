@@ -10,8 +10,10 @@
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest.json">
     <title>4M Fire Inc. - Sprinkler System Inspection</title>
-    <!-- PDF generation library for iPad/mobile compatibility -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- docx.js generates native editable .docx inspection reports in the browser.
+         FileSaver.js provides window.saveAs() for downloading the blob. -->
+    <script src="https://unpkg.com/docx@8.5.0/build/index.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
     <style>
         :root {
             --primary-color: #000;
@@ -1141,7 +1143,7 @@
             { id: 'screen4', title: 'General Checklists', icon: '✓' },
             { id: 'screen5', title: 'Asset Tests', icon: '📊' },
             { id: 'screen6', title: 'Deficiencies & Recommendations', icon: '⚠️' },
-            { id: 'screen7', title: 'Review & Generate PDF', icon: '📄' }
+            { id: 'screen7', title: 'Review & Generate Word Doc', icon: '📄' }
         ];
 
         let currentScreen = 0;
@@ -1729,7 +1731,7 @@
             }
 
             document.getElementById('backBtn').disabled = currentScreen === 0;
-            document.getElementById('nextBtn').textContent = currentScreen === 6 ? 'Generate PDF' : 'Next →';
+            document.getElementById('nextBtn').textContent = currentScreen === 6 ? 'Generate Word Report' : 'Next →';
             document.getElementById('nextBtn').onclick = currentScreen === 6 ? generatePDF : nextScreen;
         }
 
@@ -2345,7 +2347,7 @@
 
         function renderReviewScreen() {
             const container = document.getElementById('container');
-            let html = `<div class="screen active"><div class="screen-title">📄 Review & Generate PDF</div>`;
+            let html = `<div class="screen active"><div class="screen-title">📄 Review & Generate Word Report</div>`;
 
             // Summary of all data
             html += `
@@ -2488,7 +2490,7 @@
         }
 
         // Checklist definitions matching the app's data keys (module scope so both
-        // generatePDF() and downloadPDFFile() can use them).
+        // generatePDF() and buildWordDocumentBlob() can use them).
         const checklistSections = [
             { name: 'Owner Section', key: 'ownerSection', items: [
                 {key:'item1',label:'Is the building occupied?'},{key:'item2',label:'Has occupancy/hazard/storage remained the same?'},
@@ -2811,7 +2813,7 @@
             const reportStyles = '* { margin:0; padding:0; box-sizing:border-box; } body, div { font-family: Arial, Helvetica, sans-serif; color:#333; } @media print { .no-print { display:none !important; } @page { size: letter; margin: 0.5in; } #reportOverlay { position:static !important; overflow:visible !important; } }';
             reportOverlay.innerHTML = '<style>' + reportStyles + '</style>' +
                 '<div class="no-print" style="text-align:center;padding:16px;background:#000;position:sticky;top:0;z-index:10001;display:flex;justify-content:center;gap:12px;flex-wrap:wrap;">' +
-                '<button onclick="downloadPDFFile()" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;" id="downloadPdfBtn">📥 Download PDF</button>' +
+                '<button onclick="downloadWordFile()" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;" id="downloadWordBtn">📥 Download Word</button>' +
                 '<button onclick="window.print()" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;">🖨️ Print</button>' +
                 '<button onclick="document.getElementById(\'reportOverlay\').style.display=\'none\'" style="font-size:18px;padding:14px 40px;background:#fff;color:#000;border:none;border-radius:6px;cursor:pointer;font-weight:700;min-height:48px;">← Back to App</button>' +
                 '</div>' +
@@ -3155,56 +3157,444 @@
             }
         }
 
-        // Download PDF file — uses html2pdf.js to convert the already-rendered
-        // #reportContent HTML into a nicely formatted PDF. This is far more
-        // reliable across iPad, desktop, and all browsers than manual jsPDF.
-        function downloadPDFFile() {
-            const btn = document.getElementById('downloadPdfBtn');
+        // Download Word (.docx) file — v2. Builds a native, editable Word
+        // document from inspectionData using docx.js. Office staff can then
+        // tweak formatting before sending to the customer.
+        function downloadWordFile() {
+            const btn = document.getElementById('downloadWordBtn');
             const originalText = btn ? btn.textContent : '';
-            if (btn) { btn.textContent = '⏳ Generating PDF...'; btn.disabled = true; }
+            if (btn) { btn.textContent = '⏳ Generating Word...'; btn.disabled = true; }
 
             const restore = () => { if (btn) { btn.textContent = originalText; btn.disabled = false; } };
 
             try {
-                if (typeof html2pdf === 'undefined') {
-                    throw new Error('PDF library not loaded. Please refresh and try again.');
+                if (typeof docx === 'undefined') {
+                    throw new Error('Word library not loaded. Please refresh and try again.');
                 }
 
-                const reportEl = document.getElementById('reportContent');
-                if (!reportEl) {
-                    throw new Error('Report not rendered yet. Please reopen the report and try again.');
-                }
+                const filename = buildInspectionFilename(inspectionData, 'docx');
 
-                const filename = buildInspectionFilename(inspectionData, 'pdf');
-
-                // IMPORTANT: html2canvas can't capture elements positioned offscreen
-                // (e.g. left:-10000px) — it produces a blank PDF. We must render
-                // from the visible #reportContent element directly.
-                const opt = {
-                    margin:       [0.4, 0.4, 0.5, 0.4],
-                    filename:     filename,
-                    image:        { type: 'jpeg', quality: 0.95 },
-                    html2canvas:  { scale: 2, useCORS: true, letterRendering: true, backgroundColor: '#ffffff', scrollX: 0, scrollY: 0 },
-                    jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' },
-                    pagebreak:    { mode: ['css', 'legacy'], avoid: ['tr', 'thead'] }
-                };
-
-                // Scroll the overlay to top so html2canvas captures from the start
-                const overlay = document.getElementById('reportOverlay');
-                if (overlay) overlay.scrollTop = 0;
-
-                html2pdf().set(opt).from(reportEl).save()
-                    .then(() => { restore(); })
-                    .catch(err => {
-                        console.error('html2pdf error:', err);
+                buildWordDocumentBlob(inspectionData)
+                    .then(blob => {
+                        if (typeof window.saveAs === 'function') {
+                            window.saveAs(blob, filename);
+                        } else {
+                            // Fallback if FileSaver didn't load — synthesize a download link.
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            setTimeout(() => URL.revokeObjectURL(url), 100);
+                        }
                         restore();
-                        alert('PDF generation failed: ' + (err && err.message ? err.message : err) + '\n\nYou can use the Print button as an alternative — choose "Save as PDF" from the print dialog.');
+                    })
+                    .catch(err => {
+                        console.error('docx generation error:', err);
+                        restore();
+                        alert('Word generation failed: ' + (err && err.message ? err.message : err));
                     });
             } catch (err) {
-                console.error('PDF generation error:', err);
+                console.error('Word generation error:', err);
                 restore();
-                alert('PDF generation failed: ' + err.message + '\n\nYou can use the Print button as an alternative — choose "Save as PDF" from the print dialog.');
+                alert('Word generation failed: ' + err.message);
             }
+        }
+
+        // Build the inspection report as a .docx Blob using docx.js.
+        // Returns Promise<Blob>. Mirrors the section order used in generatePDF()
+        // so v1 and v2 reports match structurally.
+        function buildWordDocumentBlob(d) {
+            const s = (v) => (v == null || v === undefined) ? '' : String(v);
+            const {
+                Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
+                WidthType, BorderStyle, AlignmentType, HeadingLevel, PageBreak, ShadingType
+            } = docx;
+
+            const statusText = (v) => v === 'yes' ? 'YES' : v === 'no' ? 'NO' : v === 'na' ? 'N/A' : '—';
+
+            // Format a yes/no/na code as a pretty "Yes"/"No"/"N/A" string.
+            // When the field is a known toggle (isToggle=true), treat undefined as
+            // "Yes" to mirror the app's UI default — otherwise techs who never
+            // clicked the already-selected Yes button would get blanks in the doc.
+            function ynVal(v, isToggle) {
+                if (isToggle && (v == null || v === '')) v = 'yes';
+                if (v === 'yes') return 'Yes';
+                if (v === 'no') return 'No';
+                if (v === 'na') return 'N/A';
+                return s(v);
+            }
+
+            // Render free text as a bulleted list (one bullet per non-empty line).
+            // Used for Deficiencies and Recommendations so the customer can scan
+            // them as discrete items in Word.
+            function bulletList(text) {
+                const trimmed = s(text).trim();
+                if (!trimmed) return [bodyPara('None noted.', { italics: true })];
+                return trimmed.split(/\r?\n+/).filter(line => line.trim()).map(line =>
+                    new Paragraph({
+                        bullet: { level: 0 },
+                        spacing: { after: 60 },
+                        children: [new TextRun({ text: line.trim(), size: 22 })]
+                    })
+                );
+            }
+
+            const THIN = { style: BorderStyle.SINGLE, size: 4, color: '999999' };
+            const CELL_BORDERS = { top: THIN, bottom: THIN, left: THIN, right: THIN };
+
+            // --- visual helpers ---
+            function heading2(text) {
+                return new Paragraph({
+                    heading: HeadingLevel.HEADING_2,
+                    shading: { type: ShadingType.CLEAR, color: 'auto', fill: '000000' },
+                    spacing: { before: 240, after: 120 },
+                    children: [new TextRun({ text: s(text), bold: true, size: 26, color: 'FFFFFF' })]
+                });
+            }
+
+            function heading3(text) {
+                return new Paragraph({
+                    heading: HeadingLevel.HEADING_3,
+                    spacing: { before: 200, after: 80 },
+                    children: [new TextRun({ text: s(text), bold: true, size: 22 })]
+                });
+            }
+
+            function center(text, opts = {}) {
+                return new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: opts.after != null ? opts.after : 80 },
+                    children: [new TextRun({ text: s(text), bold: opts.bold, size: opts.size || 22, color: opts.color })]
+                });
+            }
+
+            function bodyPara(text, opts = {}) {
+                return new Paragraph({
+                    spacing: { after: opts.after != null ? opts.after : 120 },
+                    children: [new TextRun({ text: s(text), size: opts.size || 22, italics: opts.italics, bold: opts.bold })]
+                });
+            }
+
+            function cell(text, opts = {}) {
+                return new TableCell({
+                    borders: CELL_BORDERS,
+                    width: opts.width,
+                    shading: opts.fill ? { type: ShadingType.CLEAR, color: 'auto', fill: opts.fill } : undefined,
+                    children: [new Paragraph({
+                        alignment: opts.align || AlignmentType.LEFT,
+                        children: [new TextRun({
+                            text: s(text),
+                            bold: opts.bold,
+                            color: opts.color,
+                            size: opts.size || 20
+                        })]
+                    })]
+                });
+            }
+
+            // Two-column label/value table
+            function keyValueTable(rows) {
+                const tableRows = rows.filter(r => r).map(([k, v]) => new TableRow({
+                    children: [
+                        cell(k, { bold: true, fill: 'F2F2F2', width: { size: 40, type: WidthType.PERCENTAGE } }),
+                        cell(v, { width: { size: 60, type: WidthType.PERCENTAGE } })
+                    ]
+                }));
+                return new Table({
+                    rows: tableRows,
+                    width: { size: 100, type: WidthType.PERCENTAGE }
+                });
+            }
+
+            // Checklist: Item / Status / Notes
+            function checklistTable(section) {
+                const dataObj = d.screen4[section.key] || {};
+                const header = new TableRow({
+                    tableHeader: true,
+                    children: [
+                        cell('Item', { bold: true, color: 'FFFFFF', fill: '333333', width: { size: 55, type: WidthType.PERCENTAGE } }),
+                        cell('Status', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER, width: { size: 15, type: WidthType.PERCENTAGE } }),
+                        cell('Notes', { bold: true, color: 'FFFFFF', fill: '333333', width: { size: 30, type: WidthType.PERCENTAGE } })
+                    ]
+                });
+                const rows = section.items.map((item, idx) => {
+                    const bg = idx % 2 === 0 ? undefined : 'F9F9F9';
+                    const val = dataObj[item.key] || '';
+                    const notes = dataObj[item.key + '_notes'] || '';
+                    const isSet = val === 'yes' || val === 'no' || val === 'na';
+                    return new TableRow({
+                        children: [
+                            cell(item.label, { fill: bg }),
+                            cell(statusText(val), { align: AlignmentType.CENTER, bold: isSet, fill: bg }),
+                            cell(notes, { fill: bg })
+                        ]
+                    });
+                });
+                return new Table({ rows: [header, ...rows], width: { size: 100, type: WidthType.PERCENTAGE } });
+            }
+
+            const children = [];
+
+            // --- Cover page ---
+            children.push(new Paragraph({ spacing: { before: 1600 }, children: [] }));
+            children.push(center('4M Fire Inc.', { bold: true, size: 56, after: 200 }));
+            children.push(center('Sprinkler System Inspection Report', { bold: true, size: 36, after: 400 }));
+            children.push(center(d.screen2.companyName, { size: 28, after: 100 }));
+            children.push(center(d.screen2.buildingAddress, { size: 22, color: '555555', after: 500 }));
+            children.push(center('Inspection Date: ' + s(d.screen1.inspectionDate), { size: 22, after: 60 }));
+            children.push(center('Inspector: ' + s(d.screen1.inspectorName), { size: 22, after: 60 }));
+            children.push(center('Certification #: ' + s(d.screen1.skillCert), { size: 22, after: 60 }));
+            children.push(center('Type: ' + s(d.screen1.inspectionType), { size: 22, after: 500 }));
+            children.push(center('4M Fire Inc. | sales@4mfire.com | 1-844-463-4730', { size: 18, color: '666666', after: 0 }));
+            children.push(new Paragraph({ children: [new PageBreak()] }));
+
+            // --- Executive Summary ---
+            children.push(heading2('Executive Summary'));
+            children.push(keyValueTable([
+                ['Inspection Date', d.screen1.inspectionDate],
+                ['Inspector Name', d.screen1.inspectorName],
+                ['Certification #', d.screen1.skillCert],
+                ['Inspection Type', d.screen1.inspectionType]
+            ]));
+            if (d.screen1.executiveSummary) {
+                children.push(bodyPara(d.screen1.executiveSummary, { italics: true }));
+            }
+
+            // --- Building Information ---
+            children.push(heading2('Building Information'));
+            children.push(keyValueTable([
+                ['Building Address', d.screen2.buildingAddress],
+                ['Company Name', d.screen2.companyName],
+                ['Contact Name & Info', d.screen2.contactInfo],
+                ['Lock Box Code', d.screen2.lockBoxCode],
+                ['Fire Panel Monitoring Co.', d.screen2.monitoringCompany],
+                ['Monitoring Account #', d.screen2.monitoringAccount],
+                ['Monitoring Password', d.screen2.monitoringPassword]
+            ]));
+
+            // --- Assets Inspected ---
+            children.push(heading2('Assets Inspected'));
+            children.push(keyValueTable([
+                ['Dry Systems', d.screen3.drySystems],
+                ['Wet Systems', d.screen3.wetSystems],
+                ['Fire Pumps', d.screen3.firePumps],
+                ['Fire Hydrants', d.screen3.fireHydrants],
+                ['Standpipe', d.screen3.standpipe ? 'Yes' : 'No']
+            ]));
+
+            // --- Deficiencies & Recommendations (kept up front, mirrors v1) ---
+            // Rendered as bullet lists so each item the tech wrote on its own line
+            // becomes a distinct bullet the customer can scan.
+            children.push(heading2('Deficiencies'));
+            bulletList(d.screen6.deficiencies).forEach(p => children.push(p));
+            children.push(heading2('Recommendations'));
+            bulletList(d.screen6.recommendations).forEach(p => children.push(p));
+
+            // --- Checklists ---
+            checklistSections.forEach(section => {
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2(section.name));
+                children.push(checklistTable(section));
+                if (section.key === 'backflowPreventers' && (d.screen4[section.key] || {}).details) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [
+                            new TextRun({ text: 'Details: ', bold: true, size: 20 }),
+                            new TextRun({ text: s(d.screen4[section.key].details), size: 20 })
+                        ]
+                    }));
+                }
+            });
+
+            // --- Dry Systems ---
+            for (let i = 0; i < d.screen3.drySystems; i++) {
+                const sys = d.screen5.drySystems[i] || {};
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Dry System Test – System ' + (i + 1)));
+                children.push(keyValueTable([
+                    ['System No.', sys.systemNo], ['Location', sys.location], ['Valve Size/Make', sys.valveSize], ['Model No.', sys.modelNo],
+                    ['System Air Pressure (PSI)', sys.airPressure], ['City Static Water Pressure (PSI)', sys.staticPressure],
+                    ['City Residual Water Pressure/Valve Size', sys.residualPressure], ['Does Alarm Switch Operate?', ynVal(sys.alarmSwitch, true)],
+                    ['Low Pressure Switch Operation', sys.lowPressureSwitch], ['Tamper Switch Operation', sys.tamperSwitch],
+                    ["Location of Inspector's Test Valves", sys.testValveLocation], ['Trip Time', sys.tripTime],
+                    ['Time for Water to Reach Test Valve', sys.waterReachTime], ['Water Motor Gong Operation', sys.gongOperation],
+                    ['Valve Condition', sys.valveCondition], ['Seat Condition', sys.seatCondition],
+                    ['Type of Control Valve', sys.controlValveType], ['Are Valves Sealed, Supervised or Locked?', sys.valvesSealed],
+                    ['Is Spare Sprinkler Stock Adequate?', sys.spareStock], ['Is There A Head Wrench?', sys.headWrench],
+                    ['Were Low Points Drained?', sys.lowPointsDrained], ['How Many Low Points Located?', sys.lowPointsCount],
+                    ['Air Compressor Operation', sys.compressorOperation], ['Was System Left in Service?', sys.leftInService],
+                    ['Record of System Flushing', sys.flushingRecord]
+                ]));
+                if (sys.notes) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(sys.notes), size: 20 })]
+                    }));
+                }
+            }
+
+            // --- Wet Systems ---
+            for (let i = 0; i < d.screen3.wetSystems; i++) {
+                const sys = d.screen5.wetSystems[i] || {};
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Wet System ' + (i + 1)));
+                children.push(keyValueTable([
+                    ['Valve Size/Make', sys.valveSize], ['Model No.', sys.modelNo], ['System Pressure', sys.pressure],
+                    ['City Static Water Pressure', sys.staticPressure], ['City Residual Water Pressure/Valve Size', sys.residualPressure],
+                    ["Location of Inspector's Test Valves", sys.testValveLocation], ['Type of Control Valve', sys.controlValveType],
+                    ['Does Alarm Switch Operate?', ynVal(sys.alarmSwitch, true)], ['Did Low Pressure Switch Operate?', ynVal(sys.lowPressureSwitch, true)],
+                    ['Tamper Switch Operation?', ynVal(sys.tamperSwitch, true)], ['Alarm Confirmed?', ynVal(sys.alarmConfirmed, true)],
+                    ['Water Motor Gong Operation?', ynVal(sys.gongOperation, true)], ['Valve Condition?', ynVal(sys.valveCondition, true)],
+                    ['Seat Condition?', ynVal(sys.seatCondition, true)], ['Are Valves Sealed, Supervised or Locked?', sys.valvesSealed],
+                    ['Is Spare Sprinkler Stock Adequate?', sys.spareStock], ['Is There A Head Wrench?', sys.headWrench],
+                    ['Was System Left in Service?', sys.leftInService]
+                ]));
+                if (sys.notes) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(sys.notes), size: 20 })]
+                    }));
+                }
+            }
+
+            // --- Fire Pumps ---
+            for (let i = 0; i < d.screen3.firePumps; i++) {
+                const p = d.screen5.firePumps[i] || {};
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Fire Pump Test – Pump ' + (i + 1)));
+                children.push(keyValueTable([
+                    ['Fire Pump Location', p.location], ['Inlet & Outlet Size', p.inletOutletSize], ['Make & Model No.', p.makeModel],
+                    ['Type of Inlet Valve', p.inletValveType], ['Start Up Pressure (PSI)', p.startupPressure],
+                    ['Developed Pressure (PSI)', p.developedPressure], ['Does Pump Automatically Shut Off?', ynVal(p.autoShutoff, true)],
+                    ['Does Pump Annunciate When Running?', ynVal(p.annunciate, true)], ['Does Relief Valve Operate When Pump Running?', ynVal(p.reliefValve, true)]
+                ]));
+                if (p.notes) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(p.notes), size: 20 })]
+                    }));
+                }
+            }
+
+            // --- Fire Hydrants ---
+            for (let i = 0; i < d.screen3.fireHydrants; i++) {
+                const h = d.screen5.fireHydrants[i] || {};
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Fire Hydrant ' + (i + 1)));
+                children.push(keyValueTable([
+                    ['Valve Size/Make', h.valveSize], ['Model No.', h.modelNo], ['City Static Water Pressure', h.staticPressure],
+                    ['Secondary Valve', h.secondaryValve], ['Secondary Valve # Turns', h.secondaryTurns],
+                    ['Hydrant Turns to fully open', h.fullOpenTurns], ['Flowed for 1 minute or clean', h.flowed],
+                    ['Does hydrant drain', h.drains], ['Water in hydrant before test', h.waterPresent],
+                    ['Hydrant Location', h.location], ['Hydrant Colour', h.colour]
+                ]));
+                if (h.notes) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(h.notes), size: 20 })]
+                    }));
+                }
+            }
+
+            // --- Flows and Tamper Switch ---
+            if (d.screen5.flowsTamperSwitch && d.screen5.flowsTamperSwitch.length > 0) {
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Flows and Tamper Switch Inspections'));
+                const header = new TableRow({
+                    tableHeader: true,
+                    children: [
+                        cell('Description',     { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('F.S. Operations', { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('Time/PSI',        { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('Size',            { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('T.S. Operation',  { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('Location',        { bold: true, color: 'FFFFFF', fill: '333333' })
+                    ]
+                });
+                const dataRows = d.screen5.flowsTamperSwitch.map((row, idx) => {
+                    const bg = idx % 2 === 0 ? undefined : 'F9F9F9';
+                    return new TableRow({
+                        children: [
+                            cell(row.description, { fill: bg }),
+                            cell(row.fsOperations, { fill: bg }),
+                            cell(row.timePsi, { fill: bg }),
+                            cell(row.size, { fill: bg }),
+                            cell(row.tsOperation, { fill: bg }),
+                            cell(row.location, { fill: bg })
+                        ]
+                    });
+                });
+                children.push(new Table({ rows: [header, ...dataRows], width: { size: 100, type: WidthType.PERCENTAGE } }));
+            }
+
+            // --- Standpipe Flow Test ---
+            if (d.screen3.standpipe && d.screen5.standpipeFlow) {
+                const sp = d.screen5.standpipeFlow;
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Standpipe Flow Test Report'));
+                children.push(heading3('Building Characteristics'));
+                children.push(keyValueTable([
+                    ['Building Height (Floors)', sp.buildingHeight], ['Elevation (ft)', sp.elevation],
+                    ['Highest Hose Station Location', sp.highestHoseStation], ['Flow Test Location', sp.flowTestLocation],
+                    ['Height Difference (ft)', sp.heightDifference], ['Hose Length (ft)', sp.hoseLength],
+                    ['Pressure Gauge at Top of Riser', sp.pressureGauge], ['ULC Approved', sp.ulcApproved]
+                ]));
+                children.push(heading3('Flow Test Results'));
+                const testHeader = new TableRow({
+                    tableHeader: true,
+                    children: [
+                        cell('Measurement', { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('Test 1', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER }),
+                        cell('Test 2', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER }),
+                        cell('Test 3', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER })
+                    ]
+                });
+                const testRows = [
+                    ['Static Pressure (PSI)',   sp.test1_static,       sp.test2_static,       sp.test3_static],
+                    ['Residual Pressure (PSI)', sp.test1_residual,     sp.test2_residual,     sp.test3_residual],
+                    ['Pitot Tip Size (in)',     sp.test1_pitot,        sp.test2_pitot,        sp.test3_pitot],
+                    ['Pitot Reading (PSI)',     sp.test1_pitotReading, sp.test2_pitotReading, sp.test3_pitotReading],
+                    ['Flow Reading (GPM)',      sp.test1_flow,         sp.test2_flow,         sp.test3_flow]
+                ].map(([m, t1, t2, t3], idx) => {
+                    const bg = idx % 2 === 0 ? undefined : 'F9F9F9';
+                    return new TableRow({
+                        children: [
+                            cell(m, { fill: bg }),
+                            cell(t1, { align: AlignmentType.CENTER, fill: bg }),
+                            cell(t2, { align: AlignmentType.CENTER, fill: bg }),
+                            cell(t3, { align: AlignmentType.CENTER, fill: bg })
+                        ]
+                    });
+                });
+                children.push(new Table({ rows: [testHeader, ...testRows], width: { size: 100, type: WidthType.PERCENTAGE } }));
+                children.push(heading3('Fire Pump Information'));
+                children.push(keyValueTable([
+                    ['Pump Mode (Auto/Manual)', sp.pumpMode], ['Timer Installed (Y/N)', sp.timerInstalled],
+                    ['Fire Pump Start (PSI)', sp.firePumpStart], ['Fire Pump Stop (PSI)', sp.firePumpStop],
+                    ['Jockey Pump Start (PSI)', sp.jockeyStart], ['Jockey Pump Stop (PSI)', sp.jockeyStop],
+                    ['Discharge Running (PSI)', sp.dischargeRunning], ['City Pressure (PSI)', sp.cityPressure]
+                ]));
+            }
+
+            // Build document. 720 twips = 0.5" margin (1 inch = 1440 twips).
+            const doc = new Document({
+                creator: '4M Fire Inc.',
+                title: 'Sprinkler System Inspection Report',
+                description: 'Inspection report for ' + s(d.screen2.companyName),
+                sections: [{
+                    properties: {
+                        page: {
+                            margin: { top: 720, right: 720, bottom: 720, left: 720 }
+                        }
+                    },
+                    children: children
+                }]
+            });
+
+            return Packer.toBlob(doc);
         }
 
         // --- Legacy jsPDF implementation kept for reference but no longer used ---
