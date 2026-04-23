@@ -1,4 +1,4 @@
-const CACHE_NAME = '4m-fire-v2';
+const CACHE_NAME = '4m-fire-v3';
 const ASSETS = [
   './',
   './index.html',
