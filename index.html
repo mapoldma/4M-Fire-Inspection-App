@@ -1108,6 +1108,7 @@
                 wetSystems: 0,
                 firePumps: 0,
                 fireHydrants: 0,
+                preactionSystems: 0,
                 standpipe: false
             },
             screen4: {
@@ -1127,6 +1128,7 @@
                 wetSystems: [],
                 firePumps: [],
                 fireHydrants: [],
+                preactionSystems: [],
                 flowsTamperSwitch: [],
                 standpipeFlow: null
             },
@@ -1262,7 +1264,7 @@
 
             const keys = itemKey.split('.');
             // Determine which screen the data belongs to
-            const assetPrefixes = ['drySystem_', 'wetSystem_', 'firePump_', 'fireHydrant_'];
+            const assetPrefixes = ['drySystem_', 'wetSystem_', 'firePump_', 'fireHydrant_', 'preactionSystem_'];
             const isAssetToggle = assetPrefixes.some(prefix => itemKey.startsWith(prefix));
 
             if (isAssetToggle) {
@@ -1271,7 +1273,7 @@
                 const type = parts[0]; // drySystem, wetSystem, firePump, fireHydrant
                 const idx = parseInt(parts[1]);
                 const field = keys[1];
-                const typeMap = { drySystem: 'drySystems', wetSystem: 'wetSystems', firePump: 'firePumps', fireHydrant: 'fireHydrants' };
+                const typeMap = { drySystem: 'drySystems', wetSystem: 'wetSystems', firePump: 'firePumps', fireHydrant: 'fireHydrants', preactionSystem: 'preactionSystems' };
                 const arrayKey = typeMap[type];
                 if (arrayKey && inspectionData.screen5[arrayKey][idx]) {
                     inspectionData.screen5[arrayKey][idx][field] = value;
@@ -1476,6 +1478,15 @@
                                     <button class="counter-btn" onclick="decrementCounter('fireHydrants')">−</button>
                                     <div class="counter-display" id="fireHydrants-display">${inspectionData.screen3.fireHydrants}</div>
                                     <button class="counter-btn" onclick="incrementCounter('fireHydrants')">+</button>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Pre-Action/Deluge Systems (0-10)</label>
+                                <div class="counter-group">
+                                    <button class="counter-btn" onclick="decrementCounter('preactionSystems')">−</button>
+                                    <div class="counter-display" id="preactionSystems-display">${inspectionData.screen3.preactionSystems}</div>
+                                    <button class="counter-btn" onclick="incrementCounter('preactionSystems')">+</button>
                                 </div>
                             </div>
 
@@ -1845,16 +1856,6 @@
                                            onchange="inspectionData.screen5.drySystems[${i}].valvesSealed = this.value">
                                 </div>
                                 <div class="form-group">
-                                    <label>Is Spare Sprinkler Stock Adequate?</label>
-                                    <input type="text" placeholder="Yes/No/Details" value="${system.spareStock || ''}"
-                                           onchange="inspectionData.screen5.drySystems[${i}].spareStock = this.value">
-                                </div>
-                                <div class="form-group">
-                                    <label>Is There A Head Wrench?</label>
-                                    <input type="text" placeholder="Yes/No" value="${system.headWrench || ''}"
-                                           onchange="inspectionData.screen5.drySystems[${i}].headWrench = this.value">
-                                </div>
-                                <div class="form-group">
                                     <label>Were Low Points Drained?</label>
                                     <input type="text" placeholder="Yes/No" value="${system.lowPointsDrained || ''}"
                                            onchange="inspectionData.screen5.drySystems[${i}].lowPointsDrained = this.value">
@@ -1986,19 +1987,14 @@
                                            onchange="inspectionData.screen5.wetSystems[${i}].valvesSealed = this.value">
                                 </div>
                                 <div class="form-group">
-                                    <label>Is Spare Sprinkler Stock Adequate?</label>
-                                    <input type="text" placeholder="Yes/No/Details" value="${system.spareStock || ''}"
-                                           onchange="inspectionData.screen5.wetSystems[${i}].spareStock = this.value">
-                                </div>
-                                <div class="form-group">
-                                    <label>Is There A Head Wrench?</label>
-                                    <input type="text" placeholder="Yes/No" value="${system.headWrench || ''}"
-                                           onchange="inspectionData.screen5.wetSystems[${i}].headWrench = this.value">
-                                </div>
-                                <div class="form-group">
                                     <label>Was System Left in Service?</label>
                                     <input type="text" placeholder="Yes/No" value="${system.leftInService || ''}"
                                            onchange="inspectionData.screen5.wetSystems[${i}].leftInService = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>EPP Operation</label>
+                                    <input type="text" placeholder="Auto/Manual" value="${system.eppOperation || ''}"
+                                           onchange="inspectionData.screen5.wetSystems[${i}].eppOperation = this.value">
                                 </div>
                             </div>
                             <div class="form-group">
@@ -2071,6 +2067,49 @@
                                     ${createToggleButtons('firePump_' + i + '.reliefValve', pump.reliefValve || 'yes')}
                                 </div>
                             </div>
+
+                            <h4 style="margin-top: 20px;">Flow Test Results</h4>
+                            <div style="overflow-x:auto;">
+                                <table class="flow-test-table" style="width:100%;border-collapse:collapse;">
+                                    <thead>
+                                        <tr>
+                                            <th></th>
+                                            <th>Static Pressure (PSI)</th>
+                                            <th>Residual Pressure (PSI)</th>
+                                            <th>Pitot Tip Size (in)</th>
+                                            <th>Pitot Reading (PSI)</th>
+                                            <th>Flow Reading (GPM)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Test 1</td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test1StaticPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test1StaticPressure = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test1ResidualPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test1ResidualPressure = this.value"></td>
+                                            <td><input type="text" class="flow-table-input" placeholder="Size" value="${pump.test1PitotSize || ''}" onchange="inspectionData.screen5.firePumps[${i}].test1PitotSize = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test1PitotReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test1PitotReading = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="GPM" value="${pump.test1FlowReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test1FlowReading = this.value"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Test 2</td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test2StaticPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test2StaticPressure = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test2ResidualPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test2ResidualPressure = this.value"></td>
+                                            <td><input type="text" class="flow-table-input" placeholder="Size" value="${pump.test2PitotSize || ''}" onchange="inspectionData.screen5.firePumps[${i}].test2PitotSize = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test2PitotReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test2PitotReading = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="GPM" value="${pump.test2FlowReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test2FlowReading = this.value"></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Test 3</td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test3StaticPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test3StaticPressure = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test3ResidualPressure || ''}" onchange="inspectionData.screen5.firePumps[${i}].test3ResidualPressure = this.value"></td>
+                                            <td><input type="text" class="flow-table-input" placeholder="Size" value="${pump.test3PitotSize || ''}" onchange="inspectionData.screen5.firePumps[${i}].test3PitotSize = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="PSI" value="${pump.test3PitotReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test3PitotReading = this.value"></td>
+                                            <td><input type="text" inputmode="text" class="flow-table-input" placeholder="GPM" value="${pump.test3FlowReading || ''}" onchange="inspectionData.screen5.firePumps[${i}].test3FlowReading = this.value"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
                             <div class="form-group">
                                 <label>Notes</label>
                                 <textarea placeholder="Add notes for this pump..." onchange="inspectionData.screen5.firePumps[${i}].notes = this.value">${pump.notes || ''}</textarea>
@@ -2151,6 +2190,170 @@
                             <div class="form-group">
                                 <label>Notes</label>
                                 <textarea placeholder="Add notes for this hydrant..." onchange="inspectionData.screen5.fireHydrants[${i}].notes = this.value">${hydrant.notes || ''}</textarea>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+
+
+            // Pre-Action / Deluge Systems
+            if (inspectionData.screen3.preactionSystems > 0) {
+                html += `<h3 style="font-size: 20px; font-weight: 700; margin: 20px 0 16px 0; color: var(--primary-color);">Pre-Action / Deluge Systems</h3>`;
+                for (let i = 0; i < inspectionData.screen3.preactionSystems; i++) {
+                    if (!inspectionData.screen5.preactionSystems[i]) {
+                        inspectionData.screen5.preactionSystems[i] = {};
+                    }
+                    const system = inspectionData.screen5.preactionSystems[i];
+                    html += `
+                        <div class="asset-section" style="margin-bottom: 24px;">
+                            <h4 style="margin-bottom: 16px;">Pre-Action / Deluge System ${i + 1}</h4>
+                            <div class="field-grid">
+                                <div class="form-group">
+                                    <label>System No.</label>
+                                    <input type="text" placeholder="System identifier" value="${system.systemNo || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].systemNo = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Location</label>
+                                    <input type="text" placeholder="Location" value="${system.location || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].location = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Valve Size/Make</label>
+                                    <input type="text" placeholder="Size/Make" value="${system.valveSize || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].valveSize = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Model No.</label>
+                                    <input type="text" placeholder="Model" value="${system.modelNo || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].modelNo = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Type of Pre-Action System</label>
+                                    <input type="text" placeholder="Type" value="${system.preactionType || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].preactionType = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Type of Detection System</label>
+                                    <input type="text" placeholder="Type" value="${system.detectionType || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].detectionType = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>System Air Pressure (PSI)</label>
+                                    <input type="text" inputmode="text" placeholder="PSI" value="${system.airPressure || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].airPressure = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>City Static Water Pressure (PSI)</label>
+                                    <input type="text" inputmode="text" placeholder="PSI" value="${system.staticPressure || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].staticPressure = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>City Residual Water Pressure/Valve Size</label>
+                                    <input type="text" placeholder="PSI / Size" value="${system.residualPressure || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].residualPressure = this.value">
+                                </div>
+                            </div>
+                            <div class="inline-section">
+                                <label style="margin-bottom: 12px;">Does Alarm Switch Operate?</label>
+                                <div class="toggle-group">
+                                    ${createToggleButtons('preactionSystem_' + i + '.alarmSwitch', system.alarmSwitch || 'yes')}
+                                </div>
+                            </div>
+                            <div class="field-grid">
+                                <div class="form-group">
+                                    <label>Low Pressure Switch Operation</label>
+                                    <input type="text" placeholder="Operation details" value="${system.lowPressureSwitch || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].lowPressureSwitch = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Tamper Switch Operation</label>
+                                    <input type="text" placeholder="Operation details" value="${system.tamperSwitch || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].tamperSwitch = this.value">
+                                </div>
+                            </div>
+                            <div class="inline-section">
+                                <label style="margin-bottom: 12px;">Solenoid Operation</label>
+                                <div class="toggle-group">
+                                    ${createToggleButtons('preactionSystem_' + i + '.solenoidOperation', system.solenoidOperation || 'yes')}
+                                </div>
+                            </div>
+                            <div class="field-grid">
+                                <div class="form-group">
+                                    <label>Location of Inspector's Test Valves</label>
+                                    <input type="text" placeholder="Location" value="${system.testValveLocation || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].testValveLocation = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Trip Time</label>
+                                    <input type="text" placeholder="Time" value="${system.tripTime || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].tripTime = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Time for Water to Reach Test Valve</label>
+                                    <input type="text" placeholder="Time" value="${system.waterReachTime || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].waterReachTime = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Water Motor Gong Operation</label>
+                                    <input type="text" placeholder="Operation" value="${system.gongOperation || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].gongOperation = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Valve Condition</label>
+                                    <input type="text" placeholder="Condition" value="${system.valveCondition || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].valveCondition = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Seat Condition</label>
+                                    <input type="text" placeholder="Condition" value="${system.seatCondition || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].seatCondition = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Type of Control Valve</label>
+                                    <input type="text" placeholder="Type" value="${system.controlValveType || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].controlValveType = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Are Valves Sealed, Supervised or Locked?</label>
+                                    <input type="text" placeholder="Status" value="${system.valvesSealed || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].valvesSealed = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Were Low Points Drained?</label>
+                                    <input type="text" placeholder="Yes/No" value="${system.lowPointsDrained || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].lowPointsDrained = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>How Many Low Points Located?</label>
+                                    <input type="text" placeholder="Count" value="${system.lowPointsCount || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].lowPointsCount = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Compressor Operation</label>
+                                    <input type="text" placeholder="Operation" value="${system.compressorOperation || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].compressorOperation = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Compressor Make and Model</label>
+                                    <input type="text" placeholder="Make/Model" value="${system.compressorMakeModel || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].compressorMakeModel = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Was System Left in Service?</label>
+                                    <input type="text" placeholder="Yes/No" value="${system.leftInService || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].leftInService = this.value">
+                                </div>
+                                <div class="form-group">
+                                    <label>Record of System Flushing</label>
+                                    <input type="text" placeholder="Record" value="${system.flushingRecord || ''}"
+                                           onchange="inspectionData.screen5.preactionSystems[${i}].flushingRecord = this.value">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Notes</label>
+                                <textarea placeholder="Add notes for this system..." onchange="inspectionData.screen5.preactionSystems[${i}].notes = this.value">${system.notes || ''}</textarea>
                             </div>
                         </div>
                     `;
@@ -2308,32 +2511,32 @@
                             </div>
                             <div class="form-group">
                                 <label>Fire Pump Start (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.pumpStart || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.pumpStart || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.pumpStart = this.value">
                             </div>
                             <div class="form-group">
                                 <label>Fire Pump Stop (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.pumpStop || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.pumpStop || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.pumpStop = this.value">
                             </div>
                             <div class="form-group">
                                 <label>Jockey Pump Start (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.jockeyStart || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.jockeyStart || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.jockeyStart = this.value">
                             </div>
                             <div class="form-group">
                                 <label>Jockey Pump Stop (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.jockeyStop || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.jockeyStop || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.jockeyStop = this.value">
                             </div>
                             <div class="form-group">
                                 <label>Discharge Running (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.dischargeRunning || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.dischargeRunning || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.dischargeRunning = this.value">
                             </div>
                             <div class="form-group">
                                 <label>City Pressure (PSI)</label>
-                                <input type="number" placeholder="PSI" value="${sp.cityPressure || ''}"
+                                <input type="text" inputmode="text" placeholder="PSI" value="${sp.cityPressure || ''}"
                                        onchange="inspectionData.screen5.standpipeFlow.cityPressure = this.value">
                             </div>
                         </div>
@@ -2372,6 +2575,7 @@
                     <div class="summary-row"><span class="label">Wet Systems:</span> <span class="value">${inspectionData.screen3.wetSystems}</span></div>
                     <div class="summary-row"><span class="label">Fire Pumps:</span> <span class="value">${inspectionData.screen3.firePumps}</span></div>
                     <div class="summary-row"><span class="label">Fire Hydrants:</span> <span class="value">${inspectionData.screen3.fireHydrants}</span></div>
+                    <div class="summary-row"><span class="label">Pre-Action/Deluge:</span> <span class="value">${inspectionData.screen3.preactionSystems}</span></div>
                     <div class="summary-row"><span class="label">Standpipe:</span> <span class="value">${inspectionData.screen3.standpipe ? 'Yes' : 'No'}</span></div>
                 </div>
 
@@ -3423,7 +3627,6 @@
                     ['Time for Water to Reach Test Valve', sys.waterReachTime], ['Water Motor Gong Operation', sys.gongOperation],
                     ['Valve Condition', sys.valveCondition], ['Seat Condition', sys.seatCondition],
                     ['Type of Control Valve', sys.controlValveType], ['Are Valves Sealed, Supervised or Locked?', sys.valvesSealed],
-                    ['Is Spare Sprinkler Stock Adequate?', sys.spareStock], ['Is There A Head Wrench?', sys.headWrench],
                     ['Were Low Points Drained?', sys.lowPointsDrained], ['How Many Low Points Located?', sys.lowPointsCount],
                     ['Air Compressor Operation', sys.compressorOperation], ['Was System Left in Service?', sys.leftInService],
                     ['Record of System Flushing', sys.flushingRecord]
@@ -3449,8 +3652,7 @@
                     ['Tamper Switch Operation?', ynVal(sys.tamperSwitch, true)], ['Alarm Confirmed?', ynVal(sys.alarmConfirmed, true)],
                     ['Water Motor Gong Operation?', ynVal(sys.gongOperation, true)], ['Valve Condition?', ynVal(sys.valveCondition, true)],
                     ['Seat Condition?', ynVal(sys.seatCondition, true)], ['Are Valves Sealed, Supervised or Locked?', sys.valvesSealed],
-                    ['Is Spare Sprinkler Stock Adequate?', sys.spareStock], ['Is There A Head Wrench?', sys.headWrench],
-                    ['Was System Left in Service?', sys.leftInService]
+                    ['Was System Left in Service?', sys.leftInService], ['EPP Operation', sys.eppOperation]
                 ]));
                 if (sys.notes) {
                     children.push(new Paragraph({
@@ -3471,10 +3673,71 @@
                     ['Developed Pressure (PSI)', p.developedPressure], ['Does Pump Automatically Shut Off?', ynVal(p.autoShutoff, true)],
                     ['Does Pump Annunciate When Running?', ynVal(p.annunciate, true)], ['Does Relief Valve Operate When Pump Running?', ynVal(p.reliefValve, true)]
                 ]));
+
+                // Per-pump Flow Test Results — each pump gets its own Test 1/2/3
+                // measurements. Mirrors the standpipe flow-test table structure.
+                children.push(heading3('Flow Test Results'));
+                const pumpTestHeader = new TableRow({
+                    tableHeader: true,
+                    children: [
+                        cell('Measurement', { bold: true, color: 'FFFFFF', fill: '333333' }),
+                        cell('Test 1', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER }),
+                        cell('Test 2', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER }),
+                        cell('Test 3', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER })
+                    ]
+                });
+                const pumpTestRows = [
+                    ['Static Pressure (PSI)',   p.test1StaticPressure,   p.test2StaticPressure,   p.test3StaticPressure],
+                    ['Residual Pressure (PSI)', p.test1ResidualPressure, p.test2ResidualPressure, p.test3ResidualPressure],
+                    ['Pitot Tip Size (in)',     p.test1PitotSize,        p.test2PitotSize,        p.test3PitotSize],
+                    ['Pitot Reading (PSI)',     p.test1PitotReading,     p.test2PitotReading,     p.test3PitotReading],
+                    ['Flow Reading (GPM)',      p.test1FlowReading,      p.test2FlowReading,      p.test3FlowReading]
+                ].map(([m, t1, t2, t3], idx) => {
+                    const bg = idx % 2 === 0 ? undefined : 'F9F9F9';
+                    return new TableRow({
+                        children: [
+                            cell(m, { fill: bg }),
+                            cell(t1, { align: AlignmentType.CENTER, fill: bg }),
+                            cell(t2, { align: AlignmentType.CENTER, fill: bg }),
+                            cell(t3, { align: AlignmentType.CENTER, fill: bg })
+                        ]
+                    });
+                });
+                children.push(new Table({ rows: [pumpTestHeader, ...pumpTestRows], width: { size: 100, type: WidthType.PERCENTAGE } }));
+
                 if (p.notes) {
                     children.push(new Paragraph({
                         spacing: { before: 120, after: 80 },
                         children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(p.notes), size: 20 })]
+                    }));
+                }
+            }
+
+
+            // --- Pre-Action / Deluge Systems ---
+            for (let i = 0; i < d.screen3.preactionSystems; i++) {
+                const sys = d.screen5.preactionSystems[i] || {};
+                children.push(new Paragraph({ children: [new PageBreak()] }));
+                children.push(heading2('Pre-Action / Deluge System – System ' + (i + 1)));
+                children.push(keyValueTable([
+                    ['System No.', sys.systemNo], ['Location', sys.location], ['Valve Size/Make', sys.valveSize], ['Model No.', sys.modelNo],
+                    ['Type of Pre-Action System', sys.preactionType], ['Type of Detection System', sys.detectionType],
+                    ['System Air Pressure (PSI)', sys.airPressure], ['City Static Water Pressure (PSI)', sys.staticPressure],
+                    ['City Residual Water Pressure/Valve Size', sys.residualPressure], ['Does Alarm Switch Operate?', ynVal(sys.alarmSwitch, true)],
+                    ['Low Pressure Switch Operation', sys.lowPressureSwitch], ['Tamper Switch Operation', sys.tamperSwitch],
+                    ['Solenoid Operation', ynVal(sys.solenoidOperation, true)],
+                    ["Location of Inspector's Test Valves", sys.testValveLocation], ['Trip Time', sys.tripTime],
+                    ['Time for Water to Reach Test Valve', sys.waterReachTime], ['Water Motor Gong Operation', sys.gongOperation],
+                    ['Valve Condition', sys.valveCondition], ['Seat Condition', sys.seatCondition],
+                    ['Type of Control Valve', sys.controlValveType], ['Are Valves Sealed, Supervised or Locked?', sys.valvesSealed],
+                    ['Were Low Points Drained?', sys.lowPointsDrained], ['How Many Low Points Located?', sys.lowPointsCount],
+                    ['Compressor Operation', sys.compressorOperation], ['Compressor Make and Model', sys.compressorMakeModel],
+                    ['Was System Left in Service?', sys.leftInService], ['Record of System Flushing', sys.flushingRecord]
+                ]));
+                if (sys.notes) {
+                    children.push(new Paragraph({
+                        spacing: { before: 120, after: 80 },
+                        children: [new TextRun({ text: 'Notes: ', bold: true, size: 20 }), new TextRun({ text: s(sys.notes), size: 20 })]
                     }));
                 }
             }
@@ -3552,12 +3815,15 @@
                         cell('Test 3', { bold: true, color: 'FFFFFF', fill: '333333', align: AlignmentType.CENTER })
                     ]
                 });
+                // Field names match the camelCase keys the app writes in Screen 5's
+                // standpipe render: test<N>StaticPressure / ResidualPressure /
+                // PitotSize / PitotReading / FlowReading.
                 const testRows = [
-                    ['Static Pressure (PSI)',   sp.test1_static,       sp.test2_static,       sp.test3_static],
-                    ['Residual Pressure (PSI)', sp.test1_residual,     sp.test2_residual,     sp.test3_residual],
-                    ['Pitot Tip Size (in)',     sp.test1_pitot,        sp.test2_pitot,        sp.test3_pitot],
-                    ['Pitot Reading (PSI)',     sp.test1_pitotReading, sp.test2_pitotReading, sp.test3_pitotReading],
-                    ['Flow Reading (GPM)',      sp.test1_flow,         sp.test2_flow,         sp.test3_flow]
+                    ['Static Pressure (PSI)',   sp.test1StaticPressure,   sp.test2StaticPressure,   sp.test3StaticPressure],
+                    ['Residual Pressure (PSI)', sp.test1ResidualPressure, sp.test2ResidualPressure, sp.test3ResidualPressure],
+                    ['Pitot Tip Size (in)',     sp.test1PitotSize,        sp.test2PitotSize,        sp.test3PitotSize],
+                    ['Pitot Reading (PSI)',     sp.test1PitotReading,     sp.test2PitotReading,     sp.test3PitotReading],
+                    ['Flow Reading (GPM)',      sp.test1FlowReading,      sp.test2FlowReading,      sp.test3FlowReading]
                 ].map(([m, t1, t2, t3], idx) => {
                     const bg = idx % 2 === 0 ? undefined : 'F9F9F9';
                     return new TableRow({
@@ -3573,7 +3839,7 @@
                 children.push(heading3('Fire Pump Information'));
                 children.push(keyValueTable([
                     ['Pump Mode (Auto/Manual)', sp.pumpMode], ['Timer Installed (Y/N)', sp.timerInstalled],
-                    ['Fire Pump Start (PSI)', sp.firePumpStart], ['Fire Pump Stop (PSI)', sp.firePumpStop],
+                    ['Fire Pump Start (PSI)', sp.pumpStart], ['Fire Pump Stop (PSI)', sp.pumpStop],
                     ['Jockey Pump Start (PSI)', sp.jockeyStart], ['Jockey Pump Stop (PSI)', sp.jockeyStop],
                     ['Discharge Running (PSI)', sp.dischargeRunning], ['City Pressure (PSI)', sp.cityPressure]
                 ]));
