@@ -693,6 +693,85 @@
             font-size: 13px;
         }
 
+        /* --- Flows and Tamper Switch: mobile-friendly stacked card layout ---
+           On phones the 6-column table becomes a vertical card per row, with
+           every input full-width and a visible label above it. Desktop layout
+           is unchanged. */
+        @media (max-width: 768px) {
+            .flow-tamper-wrap {
+                overflow-x: visible;
+            }
+
+            .flow-tamper-table,
+            .flow-tamper-table thead,
+            .flow-tamper-table tbody,
+            .flow-tamper-table tr,
+            .flow-tamper-table td {
+                display: block;
+                width: 100%;
+            }
+
+            /* Hide the column headers — labels are rendered per-cell via data-label. */
+            .flow-tamper-table thead {
+                position: absolute;
+                left: -9999px;
+                top: -9999px;
+            }
+
+            .flow-tamper-table tr {
+                background: #fff;
+                border: 1px solid var(--border-color);
+                border-radius: 8px;
+                padding: 12px;
+                margin-bottom: 12px;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            }
+
+            /* Override the alternating-row background so all cards look the same. */
+            .flow-tamper-table tr:nth-child(even) {
+                background: #fff;
+            }
+
+            .flow-tamper-table td {
+                border: none;
+                padding: 8px 0;
+            }
+
+            .flow-tamper-table td::before {
+                content: attr(data-label);
+                display: block;
+                font-weight: 600;
+                font-size: 13px;
+                color: var(--primary-color);
+                margin-bottom: 6px;
+            }
+
+            .flow-tamper-table td .flow-table-input {
+                width: 100%;
+                font-size: 16px;          /* prevents iOS Safari from auto-zooming on focus */
+                padding: 12px;
+                min-height: 44px;         /* comfortable touch target */
+            }
+
+            .flow-tamper-table td.row-actions {
+                padding-top: 12px;
+                border-top: 1px dashed var(--border-color);
+                margin-top: 4px;
+            }
+
+            .flow-tamper-table td.row-actions::before {
+                content: "";
+                display: none;
+            }
+
+            .flow-tamper-table td.row-actions .remove-row-btn {
+                width: 100%;
+                padding: 12px;
+                font-size: 14px;
+                min-height: 44px;
+            }
+        }
+
         /* Dashboard Styles */
         .dashboard-overlay {
             position: fixed;
@@ -2363,8 +2442,8 @@
             // Flows and Tamper Switch Inspections
             html += `
                 <h3 style="font-size: 20px; font-weight: 700; margin: 20px 0 16px 0; color: var(--primary-color);">Flows and Tamper Switch Inspections</h3>
-                <div class="table-container">
-                    <table>
+                <div class="table-container flow-tamper-wrap">
+                    <table class="flow-tamper-table">
                         <thead>
                             <tr>
                                 <th>Description</th>
@@ -2383,13 +2462,13 @@
                 inspectionData.screen5.flowsTamperSwitch.forEach((row, idx) => {
                     html += `
                         <tr>
-                            <td><input type="text" class="flow-table-input" placeholder="Description" value="${row.description || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].description = this.value"></td>
-                            <td><input type="text" class="flow-table-input" placeholder="Yes/No" value="${row.fsOperations || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].fsOperations = this.value"></td>
-                            <td><input type="text" class="flow-table-input" placeholder="Time/PSI" value="${row.timePsi || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].timePsi = this.value"></td>
-                            <td><input type="text" class="flow-table-input" placeholder="Size" value="${row.size || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].size = this.value"></td>
-                            <td><input type="text" class="flow-table-input" placeholder="Yes/No" value="${row.tsOperation || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].tsOperation = this.value"></td>
-                            <td><input type="text" class="flow-table-input" placeholder="Location" value="${row.location || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].location = this.value"></td>
-                            <td><button class="remove-row-btn" onclick="removeFlowRow(${idx})">Remove</button></td>
+                            <td data-label="Description"><input type="text" class="flow-table-input" placeholder="Description" value="${row.description || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].description = this.value"></td>
+                            <td data-label="F.S. Operations"><input type="text" class="flow-table-input" placeholder="Yes/No" value="${row.fsOperations || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].fsOperations = this.value"></td>
+                            <td data-label="Time (sec) / PSI"><input type="text" class="flow-table-input" placeholder="Time/PSI" value="${row.timePsi || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].timePsi = this.value"></td>
+                            <td data-label="Size"><input type="text" class="flow-table-input" placeholder="Size" value="${row.size || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].size = this.value"></td>
+                            <td data-label="T.S Operation"><input type="text" class="flow-table-input" placeholder="Yes/No" value="${row.tsOperation || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].tsOperation = this.value"></td>
+                            <td data-label="Location"><input type="text" class="flow-table-input" placeholder="Location" value="${row.location || ''}" onchange="inspectionData.screen5.flowsTamperSwitch[${idx}].location = this.value"></td>
+                            <td class="row-actions"><button class="remove-row-btn" onclick="removeFlowRow(${idx})">Remove</button></td>
                         </tr>
                     `;
                 });
@@ -2626,17 +2705,30 @@
             renderAssetTestsScreen();
         }
 
-        // Build a standardized filename: ClientName_InspectionDate_Frequency
+        // Sanitize a string into a safe filename token.
+        // Strips disallowed chars, collapses underscores, trims leading/trailing underscores,
+        // and caps length so the final filename stays manageable on Windows/macOS.
+        function sanitizeFilenamePart(s, maxLen) {
+            const cleaned = (s || '').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '');
+            if (maxLen && cleaned.length > maxLen) return cleaned.slice(0, maxLen).replace(/_+$/g, '');
+            return cleaned;
+        }
+
+        // Build a standardized filename: ClientName_BuildingAddress_InspectionDate_Frequency
         function buildInspectionFilename(data, extension) {
             const freqMap = {
                 'annual': 'Annual',
                 'semiannual': 'Semi-Annual',
                 'monthly': 'Monthly'
             };
-            const client = (data.screen2.companyName || 'UnknownClient').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const client = sanitizeFilenamePart(data.screen2.companyName, 60) || 'UnknownClient';
+            const address = sanitizeFilenamePart(data.screen2.buildingAddress, 60);
             const date = data.screen1.inspectionDate || new Date().toISOString().split('T')[0];
             const freq = freqMap[data.screen1.inspectionType] || data.screen1.inspectionType || 'Inspection';
-            return client + '_' + date + '_' + freq + '.' + extension;
+            const parts = [client];
+            if (address) parts.push(address);
+            parts.push(date, freq);
+            return parts.join('_') + '.' + extension;
         }
 
         // Build filename from a saved DB record (which has flat fields, not nested screens)
@@ -2646,10 +2738,14 @@
                 'semiannual': 'Semi-Annual',
                 'monthly': 'Monthly'
             };
-            const client = (record.companyName || 'UnknownClient').replace(/[^a-zA-Z0-9]/g, '_').replace(/_+/g, '_');
+            const client = sanitizeFilenamePart(record.companyName, 60) || 'UnknownClient';
+            const address = sanitizeFilenamePart(record.buildingAddress, 60);
             const date = record.inspectionDate || new Date().toISOString().split('T')[0];
             const freq = freqMap[record.inspectionType] || record.inspectionType || 'Inspection';
-            return client + '_' + date + '_' + freq + '.' + extension;
+            const parts = [client];
+            if (address) parts.push(address);
+            parts.push(date, freq);
+            return parts.join('_') + '.' + extension;
         }
 
         function saveReport() {
