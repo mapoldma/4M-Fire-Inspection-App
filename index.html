@@ -4453,12 +4453,82 @@
         initializeProgressBar();
         renderScreen();
 
-        // Register service worker for offline support
+        // Register service worker for offline support, with an in-app
+        // "Update available" banner so techs don't need to clear cache or
+        // reinstall the app when a new version ships.
+        //
+        // How this works:
+        //   1. Tech opens the app — old (cached) HTML loads instantly.
+        //   2. Browser checks ./sw.js in the background. If CACHE_NAME changed,
+        //      the new SW installs and enters a "waiting" state.
+        //   3. We detect the waiting SW and show a black banner at the bottom:
+        //      "A new version is available — Update now."
+        //   4. Tap → we postMessage SKIP_WAITING to the SW → it activates →
+        //      controllerchange fires → we reload the page on the new version.
+        //   5. If they don't tap, next full app launch picks it up automatically.
         if ('serviceWorker' in navigator) {
+            // Reload exactly once when a new SW takes control.
+            let reloadingForUpdate = false;
+            navigator.serviceWorker.addEventListener('controllerchange', () => {
+                if (reloadingForUpdate) return;
+                reloadingForUpdate = true;
+                window.location.reload();
+            });
+
             navigator.serviceWorker.register('./sw.js').then(reg => {
                 console.log('Service worker registered:', reg.scope);
+
+                // If a SW is already waiting at page load, surface the banner.
+                if (reg.waiting && navigator.serviceWorker.controller) {
+                    showUpdateBanner(reg.waiting);
+                }
+
+                // Watch for new SWs as they install.
+                reg.addEventListener('updatefound', () => {
+                    const newWorker = reg.installing;
+                    if (!newWorker) return;
+                    newWorker.addEventListener('statechange', () => {
+                        // "installed" + an existing controller = a real update
+                        // (not the very first install). That's when we prompt.
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            showUpdateBanner(newWorker);
+                        }
+                    });
+                });
+
+                // Poll for updates while the app is open so techs working a
+                // long shift don't have to fully close+reopen to see new code.
+                setInterval(() => { reg.update().catch(() => {}); }, 30 * 60 * 1000);
             }).catch(err => {
                 console.log('Service worker registration failed:', err);
+            });
+        }
+
+        function showUpdateBanner(waitingWorker) {
+            if (document.getElementById('updateBanner')) return;
+            const banner = document.createElement('div');
+            banner.id = 'updateBanner';
+            banner.style.cssText = [
+                'position:fixed', 'left:0', 'right:0', 'bottom:0',
+                'background:#000', 'color:#fff',
+                'padding:14px 16px',
+                'display:flex', 'align-items:center', 'justify-content:space-between',
+                'gap:12px',
+                'z-index:9999',
+                'font-size:14px', 'font-family:Arial,Helvetica,sans-serif',
+                'box-shadow:0 -2px 8px rgba(0,0,0,0.25)',
+                'padding-bottom:calc(14px + env(safe-area-inset-bottom))'
+            ].join(';');
+            banner.innerHTML =
+                '<span>🔄 A new version is available.</span>' +
+                '<button id="updateNowBtn" style="background:#fff;color:#000;border:none;border-radius:6px;padding:10px 16px;font-weight:700;cursor:pointer;min-height:40px;">Update now</button>';
+            document.body.appendChild(banner);
+            document.getElementById('updateNowBtn').addEventListener('click', () => {
+                if (waitingWorker) {
+                    waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+                } else {
+                    window.location.reload();
+                }
             });
         }
     </script>
